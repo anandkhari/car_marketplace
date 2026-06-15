@@ -132,38 +132,43 @@ export function DashboardProvider({ children }) {
   }, [])
 
   const setCountryData = useCallback(async (countryKey, payload) => {
-    console.log('setCountryData called for:', countryKey)
+  console.log('setCountryData called for:', countryKey)
 
-    if (!payload.joined_customers?.length) {
-      return
-    }
+  if (!payload.joined_customers?.length) {
+    return
+  }
 
-    const setCountry = countryKey === 'canada' ? setCanada : setUs
+  const setCountry = countryKey === 'canada' ? setCanada : setUs
 
-    console.log('calling saveSnapshot for:', countryKey)
-    setIsSavingToSupabase(true)
-    setSavingCountry(countryKey)
+  console.log('calling saveSnapshot for:', countryKey)
+  setIsSavingToSupabase(true)
+  setSavingCountry(countryKey)
 
-    try {
-      await saveSnapshot(countryKey, payload)
-      console.log('saveSnapshot success for:', countryKey)
+  try {
+    await saveSnapshot(countryKey, payload)
+    console.log('saveSnapshot success for:', countryKey)
 
-      const now = new Date().toISOString()
-      setCountry(prev => ({
-        ...prev,
-        uploadedAt: now,
-        paymentsCount: payload.payments_count,
-        customersCount: payload.customers_count,
-        latestPaymentDate: payload.latest_payment_date,
-      }))
-    } catch (err) {
-      console.error('saveSnapshot failed:', err.message)
-      setSaveError(err.message)
-    } finally {
-      setIsSavingToSupabase(false)
-      setSavingCountry(null)
-    }
-  }, [setCanada, setUs, setIsSavingToSupabase, setSavingCountry, setSaveError])
+    const now = new Date().toISOString()
+    
+    // Kept synced with the database payloads (Fixes the state overwrite)
+    setCountry(prev => ({
+      ...prev,
+      joined: hydrateJoined(payload.joined_customers),
+      subscriberIds: payload.subscriber_ids || [],
+      isReady: true,
+      uploadedAt: now,
+      paymentsCount: payload.payments_count,
+      customersCount: payload.customers_count,
+      latestPaymentDate: payload.latest_payment_date,
+    }))
+  } catch (err) {
+    console.error('saveSnapshot failed:', err.message)
+    setSaveError(err.message)
+  } finally {
+    setIsSavingToSupabase(false)
+    setSavingCountry(null)
+  }
+}, [setCanada, setUs, setIsSavingToSupabase, setSavingCountry, setSaveError])
 
   const publishDashboard = useCallback(async (label = null) => {
     setIsPublishing(true)

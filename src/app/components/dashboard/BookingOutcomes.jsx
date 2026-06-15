@@ -8,7 +8,7 @@ function pct(count, total) {
   return total > 0 ? ((count / total) * 100).toFixed(1) + '%' : '0%'
 }
 
-function OutcomeCard({ title, count, total, lines, bg, border, titleColor }) {
+function OutcomeCard({ title, count, total, lines, bg, border, titleColor, showPercentage = true }) {
   return (
     <div className={`rounded-xl border-2 p-4`} style={{ background: bg, borderColor: border }}>
       <div className="text-xs font-semibold uppercase tracking-wide mb-2" style={{ color: titleColor }}>
@@ -18,7 +18,11 @@ function OutcomeCard({ title, count, total, lines, bg, border, titleColor }) {
         {count.toLocaleString()}
         <span className="text-xs font-normal text-gray-400 ml-2">bookings</span>
       </div>
-      <div className="text-xs text-gray-400 mb-3">{pct(count, total)} of total</div>
+      {showPercentage ? (
+        <div className="text-xs text-gray-400 mb-3">{pct(count, total)} of total</div>
+      ) : (
+        <div className="text-xs text-gray-400 mb-3">Overall volume</div>
+      )}
       {lines.map((line, i) => (
         <div key={i} className="text-xs text-gray-600 mt-1">{line}</div>
       ))}
@@ -29,8 +33,28 @@ function OutcomeCard({ title, count, total, lines, bg, border, titleColor }) {
 export default function BookingOutcomes({ outcomes }) {
   const { totalBookings, fullProfit, partialRefund, fullRefund, disputeLoss } = outcomes
 
+  // Calculate total gross volume across all states to display on the total card
+  const totalVolume = 
+    (fullProfit.revenue || 0) + 
+    (partialRefund.kept || 0) + 
+    (partialRefund.grossLost || 0) + 
+    (fullRefund.totalLoss || 0) + 
+    (disputeLoss.totalLoss || 0)
+
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      {/* Total Bookings Card */}
+      <OutcomeCard
+        title="Total Bookings"
+        count={totalBookings}
+        total={totalBookings}
+        showPercentage={false}
+        lines={[`Gross volume: ${fmtK(totalVolume)}`]}
+        bg="#F8FAFC"
+        border="#CBD5E1"
+        titleColor="#475569"
+      />
+
       <OutcomeCard
         title="Full profit"
         count={fullProfit.count}

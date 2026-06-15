@@ -246,3 +246,85 @@ body {
 [data-theme='dark'] .shadow-sm {
   box-shadow: 0 18px 50px rgba(2, 6, 23, 0.24) !important;
 }
+
+/* ── Custom range sliders — white unfilled track ───────────────────────────── */
+.slider-blue,
+.slider-green {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  border: 1px solid #e5e7eb;
+}
+
+.slider-blue {
+  background: linear-gradient(to right, #3b82f6 var(--slider-pct, 50%), #ffffff var(--slider-pct, 50%));
+}
+.slider-blue::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #fff, 0 1px 4px rgba(0,0,0,0.18);
+  margin-top: -5px;
+}
+.slider-blue::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #3b82f6;
+  border: 2px solid #fff;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+.slider-blue::-moz-range-track {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  height: 4px;
+  border-radius: 2px;
+}
+.slider-blue::-moz-range-progress {
+  background: #3b82f6;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.slider-green {
+  background: linear-gradient(to right, #22c55e var(--slider-pct, 25%), #ffffff var(--slider-pct, 25%));
+}
+.slider-green::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22c55e;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #fff, 0 1px 4px rgba(0,0,0,0.18);
+  margin-top: -5px;
+}
+.slider-green::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #fff;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+.slider-green::-moz-range-track {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  height: 4px;
+  border-radius: 2px;
+}
+.slider-green::-moz-range-progress {
+  background: #22c55e;
+  height: 4px;
+  border-radius: 2px;
+}

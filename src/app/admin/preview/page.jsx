@@ -6,6 +6,7 @@ import { useDashboard } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/store/dashboardStore'
 import { copyToClipboard } from '@/lib/copyToClipboard'
 import CountryToggle from '@/components/dashboard/CountryToggle'
+import DateRangeFilter, { getFilterLabel } from '@/components/dashboard/DateRangeFilter'
 import KPIBooking from '@/components/dashboard/KPIBooking'
 import KPIHealth from '@/components/dashboard/KPIHealth'
 import BookingOutcomes from '@/components/dashboard/BookingOutcomes'
@@ -15,6 +16,7 @@ import AvgPercentileChart from '@/components/dashboard/AvgPercentileChart'
 import ScatterPlot from '@/components/dashboard/ScatterPlot'
 import BucketTable from '@/components/dashboard/BucketTable'
 import HealthTable from '@/components/dashboard/HealthTable'
+import SliderControl from '@/components/dashboard/SliderControl'
 
 const TYPE_TABS = [
   { id: 'all', label: 'All' },
@@ -46,6 +48,7 @@ export default function AdminPreviewPage() {
     country, setCountry,
     isReady,
     isLoadingFromSupabase,
+    availableYears,
     dateRange, setDateRange,
     customerType, setCustomerType,
     rawPercentile, setRawPercentile,
@@ -190,17 +193,11 @@ export default function AdminPreviewPage() {
                   <span className="text-xs text-gray-400">Updating...</span>
                 </div>
 
-                <select
-                  value={dateRange}
-                  onChange={e => setDateRange(Number(e.target.value))}
-                  className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-300"
-                >
-                  <option value={30}>Last 30 days</option>
-                  <option value={90}>Last 90 days</option>
-                  <option value={180}>Last 180 days</option>
-                  <option value={365}>Last 12 months</option>
-                  <option value={0}>All time</option>
-                </select>
+                <DateRangeFilter
+                  dateRange={dateRange}
+                  onChange={setDateRange}
+                  availableYears={availableYears}
+                />
 
                 <CountryToggle country={country} onChange={setCountry} />
               </div>
@@ -208,34 +205,35 @@ export default function AdminPreviewPage() {
 
             <p className="text-xs text-gray-400 mb-8">
               {kpis.totalCustomers.toLocaleString()} customers
-              {dateRange > 0 ? ` · Last ${dateRange} days` : ' · All time'}
+              {` · ${getFilterLabel(dateRange)}`}
             </p>
 
             {/* Sliders */}
             <div className="flex flex-col gap-2 mb-8">
-              <div className="flex items-center gap-4 bg-white border border-gray-100 rounded-xl px-5 py-3">
-                <span className="text-xs font-medium text-gray-500 w-40 shrink-0">Percentile metric</span>
-                <input
-                  type="range" min={1} max={99} step={1} defaultValue={50}
-                  onChange={e => setRawPercentile(Number(e.target.value))}
-                  className="flex-1 accent-blue-500"
-                />
-                <span className="text-xs font-semibold bg-blue-100 text-blue-700 rounded-md px-2.5 py-1 shrink-0 w-12 text-center tabular-nums">
-                  P{rawPercentile}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-4 bg-white border border-gray-100 rounded-xl px-5 py-3">
-                <span className="text-xs font-medium text-gray-500 w-40 shrink-0">Repeat rate threshold</span>
-                <input
-                  type="range" min={1} max={5} step={1} defaultValue={2}
-                  onChange={e => setRawRepeatThreshold(Number(e.target.value))}
-                  className="flex-1 accent-green-500"
-                />
-                <span className="text-xs font-semibold bg-green-100 text-green-700 rounded-md px-2.5 py-1 shrink-0 w-24 text-center tabular-nums">
-                  {repeatBadge}
-                </span>
-              </div>
+              <SliderControl
+                label="Percentile metric"
+                min={1} max={99} step={1}
+                value={rawPercentile}
+                onChange={setRawPercentile}
+                color="blue"
+                badge={
+                  <span className="text-xs font-semibold bg-blue-100 text-blue-700 rounded-md px-2.5 py-1 shrink-0 w-12 text-center tabular-nums">
+                    P{rawPercentile}
+                  </span>
+                }
+              />
+              <SliderControl
+                label="Repeat rate threshold"
+                min={1} max={5} step={1}
+                value={rawRepeatThreshold}
+                onChange={setRawRepeatThreshold}
+                color="green"
+                badge={
+                  <span className="text-xs font-semibold bg-green-100 text-green-700 rounded-md px-2.5 py-1 shrink-0 w-24 text-center tabular-nums">
+                    {repeatBadge}
+                  </span>
+                }
+              />
             </div>
 
             {/* Customer type toggle */}

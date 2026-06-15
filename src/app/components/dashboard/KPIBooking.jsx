@@ -1,3 +1,5 @@
+import { getFilterLabel } from './DateRangeFilter'
+
 function fmt(n) { return '$' + Math.round(n).toLocaleString() }
 function fmtK(n) {
   if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'm'
@@ -16,7 +18,7 @@ function Card({ label, value, sub }) {
 }
 
 export default function KPIBooking({ kpis, dateRange, percentile, repeatThreshold }) {
-  const rangeLabel = dateRange === 0 ? 'All time' : `Last ${dateRange} days`
+  const rangeLabel  = getFilterLabel(dateRange)
   const repeatLabel = repeatThreshold === 1 ? '1+ booking' : `${repeatThreshold}+ bookings`
 
   return (

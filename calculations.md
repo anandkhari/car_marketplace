@@ -1,120 +1,204 @@
-Yes absolutely. Let me read it carefully and map every calculation.
-
----
-
 ### SECTION 1 — WHO COUNTS AS A REAL CUSTOMER
 
-**Rule 1 — Full refund exclusion**
-```
-Net Spend = Total Spend - Refunded Volume - Dispute Losses
-If Net Spend <= 0 → excluded
-```
-A customer who paid $300 and got $300 back kept no money with the business. They are not counted as a customer at all. This affects 169 customers in the US dataset.
+Two groups of customers are included:
 
-**Rule 2 — Zero payment count**
+**GROUP A — Matched customers**
 ```
-If Payment Count == 0 → excluded
+Customer ID exists in BOTH payments sheet AND customers sheet.
+Included if: Total Spend > 0 (from customers CSV)
+Has full data: name, email, city, dispute losses, lifetime totals.
+isUnidentified: false
 ```
-Some Stripe records exist for people who never completed a payment. 133 such records in the US data.
 
-**Rule 3 — Dispute losses**
-Same net spend formula catches these. If a customer paid $300 and lost a chargeback for $300, net = $0. Excluded automatically.
+**GROUP B — Unmatched customers**
+```
+Customer ID exists ONLY in payments sheet.
+NOT found in customers sheet.
+Included if: gross booking payments > 0
+Has partial data only:
+  name: "Unidentified Customer"
+  email: ""
+  city: ""
+  disputeLosses: 0 (unknown)
+  lifetimeSpend: approximated from payment gross
+isUnidentified: true
+Count: ~728 customers
+Revenue: ~$193,557
+```
+
+**What counts as a booking payment**
+```
+Status == 'Paid' OR 'Refunded'
+AND description does NOT contain (case insensitive):
+  tip, subscription creation, payment for invoice,
+  fee, parking, change of service request
+Empty description → treated as booking
+```
+
+**Previous inclusion rule (removed)**
+```
+Net Spend = Total Spend - Refunded - Disputes
+Include only if Net Spend > 0
+This was too aggressive — excluded customers who represent
+real revenue even if later partially refunded.
+```
 
 ---
 
-### SECTION 2 — BOOKING METRICS KPIs
+### SECTION 2 — ADJUSTED BOOKING COUNT
+
+**Why adjust?**
+Payment Count from Stripe counts every charge made. Some were fully refunded or
+disputed — the business kept nothing. The adjusted count removes those to reflect
+real retained bookings.
+
+**Constants**
+```
+MIN_PKG_PRICE = $50   — minimum package price (configurable)
+AVG_PKG_PRICE = $225  — average package price (configurable)
+```
+
+**The client's exact formula**
+```
+Adjusted Bookings = MAX(
+  0,
+  ROUND(
+    Payment Count - (Refunded Volume + Dispute Losses) / AVG_PKG_PRICE
+  )
+)
+```
+Small refunds round away naturally — no hard threshold logic needed.
+The $112.50 tipping point (50% of $225) determines whether a refund costs a booking.
+
+**Examples**
+```
+PC=1, Refund=$25    → 1 - (25/225)  = 0.89 → ROUND=1 → 1 booking  (small tip, ignored)
+PC=1, Refund=$225   → 1 - (225/225) = 0    → ROUND=0 → 0 bookings (full reversal)
+PC=1, Refund=$125   → 1 - (125/225) = 0.44 → ROUND=0 → 0 bookings (over half refunded)
+PC=1, Refund=$100   → 1 - (100/225) = 0.56 → ROUND=1 → 1 booking  (under half refunded)
+PC=3, Refund=$450   → 3 - (450/225) = 1    → ROUND=1 → 1 booking
+PC=2, R=$100 D=$100 → 2 - (200/225) = 1.11 → ROUND=1 → 1 booking
+```
+
+**Data source by customer type**
+```
+Matched customers (in both sheets):
+  paymentCount    → from customers CSV (lifetime total, most accurate)
+  refundedVolume  → from customers CSV (lifetime total)
+  disputeLosses   → from customers CSV
+
+Unmatched customers (payments sheet only):
+  paymentCount    → count of booking payments in payments sheet
+  refundedVolume  → sum of Amount Refunded in payments sheet
+  disputeLosses   → 0 (data not available)
+```
+
+**What happens to adjusted = 0 customers**
+```
+Included in:  total customer count, gross revenue, refund losses,
+              dispute losses, net revenue, refund rate, booking outcomes
+Excluded from: frequency buckets, LTV donut, avg/percentile chart,
+               scatter plot, repeat rate calculation
+```
+
+---
+
+### SECTION 3 — BOOKING FREQUENCY BUCKETS
+
+**How buckets are assigned**
+```
+Source: adjusted bookingCount per customer
+
+adjusted == 0  → null  (health metrics only, excluded from frequency charts)
+adjusted == 1  → "1 booking"
+adjusted == 2  → "2 bookings"
+adjusted == 3  → "3 bookings"
+adjusted == 4  → "4 bookings"
+adjusted >= 5  → "5+ bookings"
+```
+
+**Null-bucket customers**
+Customers whose adjusted count rounds to 0 receive `bucket = null`.
+They are kept in the joined array and count toward health KPIs (gross, refunds, net)
+but are excluded from all frequency-based charts and the repeat rate calculation.
+
+---
+
+### SECTION 4 — BOOKING METRICS KPIs
 
 **Total Customers**
 ```
-Source: joined dataset after all exclusions
+Source: joined dataset after all exclusions (including null-bucket customers)
 Formula: count of valid joined records
-US Last 90 days: 1,719
 ```
-Every customer who made at least one real booking with net spend > 0 and had activity in the last 90 days.
 
 **Total LTV**
 ```
-Source: net field per customer (gross - refunded - disputes)
+Source: net field per customer (gross - refunded from booking payments)
 Formula: sum of all customer net values
-US Last 90 days: $416,048
 ```
-The total real money the business kept from all active customers in the period.
+Note: does not subtract dispute losses from net (dispute losses tracked separately in health section).
 
 **Avg LTV**
 ```
 Formula: Total LTV / Total Customers
-= $416,048 / 1,719 = $242
 ```
-What the average customer has spent with the business over their entire history with the business — not just this period.
 
 **P50 LTV (Median)**
 ```
-Formula: 
+Formula:
 1. Sort all customer LTV values low to high
 2. Find the middle value
-3. If even number of customers interpolate 
-   between the two middle values
-US Last 90 days: $241
+3. If even count, interpolate between the two middle values
 ```
-Half the customers spent less than $241, half spent more. More honest than the average because it is not pulled up by a few very high spenders. The slider lets you move this to P75 or P90 to see what top spenders look like.
+More honest than the average — not pulled up by a few high spenders.
+The slider moves this to any percentile (P1–P99).
 
 **Repeat Rate**
 ```
-Formula: 
-customers with booking_count >= threshold
-divided by total customers × 100
+Formula:
+customers with bookingCount >= threshold
+divided by total customers x 100
 Default threshold = 2
-US Last 90 days: 8.4%
 ```
-Only 8.4% of active customers booked more than once in the last 90 days. The threshold slider lets the client redefine loyalty — at threshold 3 it shows only customers who came back twice or more.
+Uses adjusted booking count — a customer with rawBookingCount=2 but adjustedBookingCount=1
+is counted as a 1-booking customer.
 
 ---
 
-### SECTION 3 — BUSINESS HEALTH KPIs
+### SECTION 5 — BUSINESS HEALTH KPIs
 
 **Gross Revenue**
 ```
-Source: gross field per customer 
-        (sum of all payment amounts before deductions)
+Source: gross field per customer (sum of all booking payment amounts)
 Formula: sum of customer.gross across all valid customers
-US Last 90 days: $435,371
 ```
-Total amount charged to all customers before any refunds or disputes.
 
 **Refund Losses**
 ```
 Source: refunded field per customer
 Formula: sum of customer.refunded
-US Last 90 days: $19,323
 ```
-Total money returned to customers. This is real money that left the business.
 
 **Dispute Losses**
 ```
 Source: Dispute Losses column from customers CSV
 Formula: sum of customer.disputeLosses
-US Last 90 days: $1,365
 ```
-Money lost to chargebacks — customers who disputed payments with their bank. More serious than refunds because the business also pays a chargeback fee to Stripe.
 
 **Net Revenue**
 ```
 Formula: Gross Revenue - Refund Losses - Dispute Losses
-= $435,371 - $19,323 - $1,365 = $414,683
 ```
-The real money the business actually kept after all deductions.
 
 **Refund Rate**
 ```
-Formula: 
-(Refund Losses + Dispute Losses) / Gross Revenue × 100
-= ($19,323 + $1,365) / $435,371 × 100 = 4.8%
+Formula: (Refund Losses + Dispute Losses) / Gross Revenue x 100
 ```
-For every $100 the business charges, $4.80 comes back as a refund or dispute. Industry healthy benchmark is under 5% so 4.8% is right on the edge.
 
 ---
 
-### SECTION 4 — BOOKING OUTCOMES
+### SECTION 6 — BOOKING OUTCOMES
 
 **How a booking is identified**
 ```
@@ -122,231 +206,168 @@ Source: payments CSV
 A payment is a booking if:
   Status == Paid OR Refunded
   AND description does NOT contain:
-    tip, subscription creation, 
-    payment for invoice, fee, 
+    tip, subscription creation,
+    payment for invoice, fee,
     parking, change of service request
 ```
 
 **Full Profit Booking**
 ```
 Formula: Amount Refunded == 0
-Count: 1,776 bookings
 ```
-Business kept 100% of what was charged.
 
 **Partial Refund Booking**
 ```
-Formula: Amount Refunded > 0 
+Formula: Amount Refunded > 0
          AND (Amount - Amount Refunded) > 0
-Count: 120 bookings
-Revenue lost: $19,323
-Revenue kept: portion of original charge
 ```
-Customer got some money back but the business kept something. Could be a complaint resolved with a partial discount.
 
 **Full Refund Booking**
 ```
-Formula: Net == 0 after refund
-Count: 8 bookings
-Total loss: sum of original amounts
+Formula: (Amount - Amount Refunded) == 0
 ```
-Business kept nothing from these bookings. Complete revenue loss.
 
 **Dispute Loss**
 ```
 Source: Dispute Losses column in customers CSV
-Formula: customers where dispute_losses > 0
-Count: 8 customers
-Total loss: $1,365
+Formula: customers where disputeLosses > 0
 ```
-Customers who filed chargebacks. Unlike refunds these are initiated by the customer's bank not the business.
 
 ---
 
-### SECTION 5 — BOOKING FREQUENCY BUCKETS
-
-**How buckets are assigned**
-```
-Source: booking_count per customer from payments CSV
-        (count of valid booking payments in the period)
-
-1 booking  → booked exactly once
-2 bookings → booked exactly twice
-3 bookings → booked exactly 3 times
-4 bookings → booked exactly 4 times
-5+ bookings → booked 5 or more times
-```
-
-**Why booking_count comes from payments not customers CSV**
-The customers CSV has a lifetime `Payment Count` column but it includes all time history — tips, subscription fees, everything. The payments CSV lets us count only real bookings in the selected date period. More accurate and period-specific.
-
----
-
-### SECTION 6 — BUCKET CHARTS
+### SECTION 7 — BUCKET CHARTS
 
 **Bar Chart — Customer count per bucket**
 ```
-Source: bucketStats computed from viewCustomers
+Source: bucketStats computed from viewCustomers (null-bucket customers excluded)
 X axis: bucket name
 Y axis: count of customers in that bucket
-Colors: fixed per bucket (dark blue → orange)
-US Last 90 days:
-  1 booking:  1,575 customers
-  2 bookings: 118 customers
-  3 bookings: 19 customers
-  4 bookings: 4 customers
-  5+ bookings: 3 customers
 ```
-Shows where the customer base is concentrated. For this business 91.6% of active customers only booked once.
 
 **Donut Chart — LTV share per bucket**
 ```
-Formula per slice: 
-  bucket.totalLTV / grandTotalLTV × 100
-US Last 90 days:
-  1 booking:  $360k = 86.6% of total LTV
-  2 bookings: $42k  = 10.3%
-  3 bookings: $8k   = 2.0%
-  4 bookings: $2.7k = 0.7%
-  5+ bookings: $1.8k = 0.4%
+Formula per slice:
+  bucket.totalLTV / grandTotalLTV x 100
 ```
-Even though 1-booking customers are the most numerous they also drive 86.6% of revenue. This is because there are so many of them.
 
 **Avg vs Percentile Chart**
 ```
-For each bucket two bars:
+For each bucket:
   Dark bar  = avg LTV = sum(ltvs) / count
   Light bar = P{slider} LTV = percentile value
-
-Also shows subscriber split:
-  Dark blue  = all customers avg
-  Light blue = all customers percentile
-  Dark green = subscriber avg
-  Light green = non-subscriber avg
 ```
-When avg is much higher than P50 it means a small number of high spenders are pulling the average up. The bucket is skewed.
 
 ---
 
-### SECTION 7 — DATE RANGE FILTER
+### SECTION 8 — DATE RANGE FILTER
 
 **How the filter works**
 ```
-Step 1: Find the latest payment date 
-        in the payments CSV
-        US: June 14 2026
+Step 1: Find the latest payment date in the payments CSV
 
-Step 2: Subtract the selected range
-        Last 90 days: cutoff = March 16 2026
+Step 2: Apply selected range
+        Relative (e.g. Last 90 days): cutoff = latest - N days
+        Year-based: start = Jan 1 of year, end = Dec 31
+        Custom: explicit start and end dates
 
-Step 3: Include only customers whose 
-        last payment >= cutoff date
+Step 3: Include only customers whose lastPayment >= start (and <= end)
 
 Why anchored to dataset not today:
   The CSV could be from any point in time.
-  Anchoring to today would show wrong 
-  results for historical data.
+  Anchoring to today would show wrong results for historical data.
+```
+
+**Available filter modes**
+```
+Relative:  Last 30 / 90 / 180 days, Last 12 months, All time
+By Year:   Current year, Last year, any year in the dataset
+Custom:    Explicit date range via date picker
 ```
 
 ---
 
-### SECTION 8 — SUBSCRIBER DETECTION
+### SECTION 9 — SUBSCRIBER DETECTION
 
 **How subscribers are identified**
 ```
 Source: payments CSV
-Rule: Customer ID appears in at least one 
-      payment where:
+Rule: Customer ID appears in at least one payment where:
         Description == 'Subscription creation'
         AND Status == 'Paid'
-
-US result: 56 unique subscribers
-Active in last 90 days: 53
 ```
-These are customers paying the $9.99/month membership. The subscriber toggle filters all charts and KPIs to show only this group or exclude them entirely.
+These are customers on the monthly membership plan.
+The subscriber toggle filters all charts and KPIs to show only this group,
+only non-subscribers, or all customers combined.
 
 ---
 
-### SECTION 9 — DATA FLOW SUMMARY
-
-In plain English, here is the journey from CSV to chart:
+### SECTION 10 — DATA FLOW SUMMARY
 
 ```
-1. Admin uploads 4 CSV files
+1. Admin uploads 4 CSV files (Canada payments + customers, US payments + customers)
 
 2. Browser reads payments CSV
-   → removes non-bookings (tips, fees etc)
-   → identifies subscribers
-   → classifies each payment as 
-     full profit / partial refund / full refund
+   -> removes non-bookings (tips, fees, subscriptions, etc.)
+   -> identifies subscribers
+   -> classifies each payment as full profit / partial refund / full refund
+   -> groups booking payments by customer ID
 
 3. Browser reads customers CSV
-   → gets identity (name, email)
-   → gets dispute losses
+   -> gets identity (name, email, city)
+   -> gets lifetime totals (totalSpend, paymentCount, disputeLosses)
+   -> filters: must have customer_id and last_payment
 
 4. Two files are joined on Customer ID
-   → one record per customer combining 
-     period booking data + lifetime identity
+   -> one record per customer combining period booking data + lifetime identity
+   -> excludes customers with no gross booking revenue (g.gross <= 0)
+   -> computes adjusted booking count (removes refunded/disputed bookings)
+   -> assigns bucket based on adjusted count (null if 0)
 
-5. Invalid customers removed (net <= 0)
+5. Result saved to Supabase
+   -> team can open dashboard without uploading
 
-6. Result saved to Supabase
-   → team can open dashboard without uploading
+6. Admin previews at /admin/preview, clicks Publish & Get Link
+   -> snapshot stored in published_snapshots table with unique slug
 
-7. Dashboard applies date range filter
-   → keeps only customers active in period
+7. Team opens /view/[slug]
+   -> reads snapshot from Supabase, no admin UI
 
-8. Subscriber toggle applies
-   → further filters to sub/non-sub/all
+8. Dashboard applies date range filter
+   -> keeps only customers active in selected period
 
-9. All KPIs, charts, tables computed
-   from the filtered customer list
+9. Subscriber toggle applies
+   -> further filters to sub / non-sub / all
 
-10. Sliders update percentile and 
-    repeat rate threshold dynamically
+10. All KPIs, charts, tables computed from the filtered customer list
+
+11. Sliders update percentile and repeat rate threshold dynamically
     without re-fetching any data
 ```
-
-Perfect. Note this down as a pending decision:
 
 ---
 
 ### Pending — Client Decision Required
 
-**Issue:** 728 customers exist in the payments sheet but are missing from the customers sheet. Their combined revenue of **$193,557** is currently not showing on the dashboard.
+**Issue:** 728 customers exist in the payments sheet but are missing from the customers sheet.
+Their combined revenue of **$193,557** is currently not showing on the dashboard.
 
-**Options to present to client:**
+**Options:**
 
 **Option A — Include them with partial data**
 ```
 Show these customers in the dashboard
 They will have booking data and revenue
 But no name, email, city, or dispute info
-Label them as "Unidentified customer"
 ```
 
 **Option B — Exclude them (current behavior)**
 ```
-Keep dashboard as is
 Only show customers matched on both sheets
 Acknowledge the $193,557 gap
 ```
 
 **Option C — Investigate why they are missing**
 ```
-Could be a CSV export date range issue
-Client re-exports customers sheet with 
-a wider date range to capture all IDs
-Most complete solution
+Re-export customers CSV from Stripe with a wider date range
+Most complete solution — likely a CSV date range mismatch
 ```
-
----
-
-Option C is likely the cleanest fix — the client probably just needs to export the customers CSV with a longer date range from Stripe to capture all historical customers.
-
-Flag this to the client and come back with their decision. What do you want to work on next in the meantime?
-
-
----
-
-This covers every calculation in the codebase. Want me to format this as a proper client-facing document with cleaner language?
