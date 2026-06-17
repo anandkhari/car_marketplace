@@ -17,18 +17,17 @@ import AvgPercentileChart from '@/components/dashboard/AvgPercentileChart'
 import ScatterPlot from '@/components/dashboard/ScatterPlot'
 import BucketTable from '@/components/dashboard/BucketTable'
 import HealthTable from '@/components/dashboard/HealthTable'
-import SliderControl from '@/components/dashboard/SliderControl'
 
 function SectionLabel({ children }) {
   return (
-    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+    <p className="text-xs font-medium text-gray-400 dark:text-[#6B6B70] uppercase tracking-wide mb-3">
       {children}
     </p>
   )
 }
 
 function Divider() {
-  return <hr className="border-gray-100 my-6" />
+  return <hr className="border-gray-100 dark:border-[#2D2D2F] my-6" />
 }
 
 function formatPublishedDate(isoString) {
@@ -104,7 +103,6 @@ export default function ViewSlugPage() {
         setUsPayments(uPayments)
         setPublishedAt(snap.created_at)
 
-        // Default to US if us_data exists, otherwise canada
         setCountry(uJoined.length > 0 ? 'us' : 'canada')
       } catch (err) {
         setError(err.message)
@@ -176,15 +174,13 @@ export default function ViewSlugPage() {
     [filteredNonSubs, percentile]
   )
 
-  const repeatBadge = rawRepeatThreshold === 1 ? '1+ booking' : `${rawRepeatThreshold}+ bookings`
-
   // ── Loading state ─────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#1C1C1E] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500">Loading dashboard...</p>
+          <p className="text-sm text-gray-500 dark:text-[#8E8E93]">Loading dashboard...</p>
         </div>
       </div>
     )
@@ -193,16 +189,16 @@ export default function ViewSlugPage() {
   // ── Error / not-found state ───────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#1C1C1E] flex items-center justify-center">
         <div className="text-center max-w-sm">
-          <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-16 h-16 text-gray-300 dark:text-[#3A3A3C] mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
               d="M6 18L18 6" />
           </svg>
-          <h1 className="text-lg font-medium text-gray-700 mb-2">This link is not valid</h1>
-          <p className="text-sm text-gray-400">
+          <h1 className="text-lg font-medium text-gray-700 dark:text-[#F2F2F7] mb-2">This link is not valid</h1>
+          <p className="text-sm text-gray-400 dark:text-[#6B6B70]">
             The dashboard link you followed does not exist or has been removed.
           </p>
         </div>
@@ -213,7 +209,7 @@ export default function ViewSlugPage() {
   const hasData = joined.length > 0
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-[#1C1C1E]">
 
       <SidePanel
         country={country}
@@ -223,6 +219,12 @@ export default function ViewSlugPage() {
         dateRange={dateRange}
         onDateChange={setDateRange}
         availableYears={availableYears}
+        percentile={percentile}
+        rawPercentile={rawPercentile}
+        onPercentileChange={setRawPercentile}
+        repeatThreshold={repeatThreshold}
+        rawRepeatThreshold={rawRepeatThreshold}
+        onRepeatThresholdChange={setRawRepeatThreshold}
       />
 
       <div className="flex-1 md:ml-60 overflow-y-auto">
@@ -231,11 +233,11 @@ export default function ViewSlugPage() {
           {/* ── Header ──────────────────────────────────────────────────────── */}
           <div className="flex items-start justify-between flex-wrap gap-4 mb-2">
             <div>
-              <h1 className="text-base font-medium text-gray-900">
+              <h1 className="text-base font-medium text-gray-900 dark:text-[#F2F2F7]">
                 Booking Frequency Dashboard
               </h1>
               {publishedAt && (
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-xs text-gray-400 dark:text-[#6B6B70] mt-0.5">
                   Published {formatPublishedDate(publishedAt)}
                 </p>
               )}
@@ -244,13 +246,13 @@ export default function ViewSlugPage() {
             <div className="flex items-center gap-3">
               <div className={`flex items-center gap-1.5 transition-opacity duration-150 ${isComputing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <div className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs text-gray-400">Updating...</span>
+                <span className="text-xs text-gray-400 dark:text-[#6B6B70]">Updating...</span>
               </div>
             </div>
           </div>
 
           {hasData && (
-            <p className="text-xs text-gray-400 mb-8">
+            <p className="text-xs text-gray-400 dark:text-[#6B6B70] mb-8">
               {kpis.totalCustomers.toLocaleString()} customers
               {` · ${getFilterLabel(dateRange)}`}
             </p>
@@ -259,39 +261,10 @@ export default function ViewSlugPage() {
           {/* ── Empty state for selected country ────────────────────────────── */}
           {!hasData ? (
             <div className="flex items-center justify-center py-24">
-              <p className="text-sm text-gray-400">No data for {country === 'canada' ? 'Canada' : 'United States'}.</p>
+              <p className="text-sm text-gray-400 dark:text-[#6B6B70]">No data for {country === 'canada' ? 'Canada' : 'United States'}.</p>
             </div>
           ) : (
             <>
-              {/* Sliders */}
-              <div className="flex flex-col gap-2 mb-8">
-                <SliderControl
-                  label="Percentile metric"
-                  min={1} max={99} step={1}
-                  value={rawPercentile}
-                  onChange={setRawPercentile}
-                  color="blue"
-                  badge={
-                    <span className="text-xs font-semibold bg-blue-100 text-blue-700 rounded-md px-2.5 py-1 shrink-0 w-12 text-center tabular-nums">
-                      P{rawPercentile}
-                    </span>
-                  }
-                />
-                <SliderControl
-                  label="Repeat rate threshold"
-                  min={1} max={5} step={1}
-                  value={rawRepeatThreshold}
-                  onChange={setRawRepeatThreshold}
-                  color="green"
-                  badge={
-                    <span className="text-xs font-semibold bg-green-100 text-green-700 rounded-md px-2.5 py-1 shrink-0 w-24 text-center tabular-nums">
-                      {repeatBadge}
-                    </span>
-                  }
-                />
-              </div>
-
-              {/* Charts area */}
               <div className={`transition-opacity duration-150 ${isComputing ? 'opacity-60' : 'opacity-100'}`}>
 
                 <SectionLabel>Booking metrics</SectionLabel>
@@ -315,7 +288,7 @@ export default function ViewSlugPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <BucketBarChart bucketStats={bucketStats} />
-                  <LTVDonutChart bucketStats={bucketStats} />
+                  <LTVDonutChart bucketStats={bucketStats} totalLTV={kpis.totalLTV} />
                 </div>
 
                 <div className="mb-4">

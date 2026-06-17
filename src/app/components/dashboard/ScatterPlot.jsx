@@ -11,6 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts'
+import { useTheme } from 'next-themes'
 import { BUCKETS } from '@/lib/analytics/constants'
 
 const TOTAL_DOT_LIMIT = 800
@@ -63,7 +64,6 @@ function computePercentile(arr, p) {
 }
 
 function sampleCustomers(customers) {
-  // Only keep customers with valid known buckets
   const bucketable = customers.filter(
     c => c.bucket != null && BUCKET_INDEX[c.bucket] !== undefined
   )
@@ -78,7 +78,6 @@ function sampleCustomers(customers) {
   return [...subs, ...sampledNonSubs]
 }
 
-// Single combined dots array — fixes tooltip ambiguity
 function buildAllDots(customers) {
   const dots = []
   customers.forEach((c) => {
@@ -93,7 +92,6 @@ function buildAllDots(customers) {
       bucketIndex: bi,
       name: c.name || 'Unidentified Customer',
       bucket: c.bucket,
-      // Store segment as string for tooltip display
       segment: c.isSubscriber ? 'Subscriber' : 'Non-subscriber',
       isSubscriber: c.isSubscriber,
       bookingCount: c.bookingCount ?? c.paymentCount ?? null,
@@ -133,14 +131,11 @@ function buildReferenceLines(customers, percentile) {
   return { avgLineData, percentileLineData }
 }
 
-// Single custom shape that draws circle or triangle
-// based on isSubscriber field on each dot
 function CustomDot(props) {
   const { cx, cy, payload } = props
   if (cx == null || cy == null || !payload) return null
 
   if (payload.isSubscriber) {
-    // Blue circle for subscribers
     return (
       <circle
         cx={cx}
@@ -153,7 +148,6 @@ function CustomDot(props) {
     )
   }
 
-  // Green triangle for non-subscribers
   const s = 6
   const pts = [
     `${cx},${cy - s}`,
@@ -170,13 +164,9 @@ function CustomDot(props) {
   )
 }
 
-// Tooltip now receives exactly one payload item
-// because there is only one Scatter series
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
 
-  // Find the scatter dot payload
-  // (exclude line reference points which have no segment)
   const point = payload.find(p => p.payload?.segment !== undefined)
   if (!point) return null
 
@@ -187,18 +177,18 @@ function CustomTooltip({ active, payload }) {
     : d.bucket || '—'
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg shadow-sm px-3 py-2">
-      <p className="text-xs font-medium text-gray-900">
+    <div className="bg-white dark:bg-[#2D2D2F] border border-gray-100 dark:border-[#3A3A3C] rounded-lg shadow-sm px-3 py-2">
+      <p className="text-xs font-medium text-gray-900 dark:text-[#F2F2F7]">
         {d.name}
       </p>
       <p className="text-xs mt-0.5"
         style={{ color: d.isSubscriber ? '#185FA5' : '#639922' }}>
         {d.segment}
       </p>
-      <p className="text-xs text-gray-700 mt-0.5">
+      <p className="text-xs text-gray-700 dark:text-[#AEAEB2] mt-0.5">
         ${Math.round(d.y).toLocaleString()} LTV
       </p>
-      <p className="text-xs text-gray-400 mt-0.5">
+      <p className="text-xs text-gray-400 dark:text-[#6B6B70] mt-0.5">
         {bookingLabel}
       </p>
     </div>
@@ -211,12 +201,17 @@ export default function ScatterPlot({
   percentile,
   rawPercentile,
 }) {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
+  const gridColor = isDark ? 'rgba(128,128,128,0.07)' : 'rgba(128,128,128,0.07)'
+  const tickColor = isDark ? '#6B6B70' : '#9ca3af'
+
   const sampledCustomers = useMemo(
     () => sampleCustomers(joinedCustomers),
     [joinedCustomers],
   )
 
-  // Single combined dots array
   const allDots = useMemo(() => {
     let customers = sampledCustomers
     if (customerType === 'sub')
@@ -244,8 +239,8 @@ export default function ScatterPlot({
 
   if (!joinedCustomers.length) {
     return (
-      <div className="bg-white border border-gray-100 rounded-xl p-4 mb-3">
-        <p className="text-xs text-gray-400">
+      <div className="bg-white dark:bg-[#242426] border border-gray-100 dark:border-[#2D2D2F] rounded-xl p-4 mb-3">
+        <p className="text-xs text-gray-400 dark:text-[#6B6B70]">
           No customers in selected date range.
         </p>
       </div>
@@ -253,17 +248,17 @@ export default function ScatterPlot({
   }
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-4 mb-3">
-      <div className="text-sm font-medium text-gray-900 mb-0.5">
+    <div className="bg-white dark:bg-[#242426] border border-gray-100 dark:border-[#2D2D2F] rounded-xl p-4 mb-3">
+      <div className="text-sm font-medium text-gray-900 dark:text-[#F2F2F7] mb-0.5">
         Individual customer LTV — all buckets
       </div>
-      <div className="text-xs text-gray-400 mb-4">
+      <div className="text-xs text-gray-400 dark:text-[#6B6B70] mb-4">
         Each dot = one customer · x-axis jittered within bucket ·
         color = segment · lines = avg &amp; P{rawPercentile}
       </div>
 
       {/* Legend */}
-      <div className="flex flex-wrap gap-3 mb-3 text-xs text-gray-500">
+      <div className="flex flex-wrap gap-3 mb-3 text-xs text-gray-500 dark:text-[#8E8E93]">
         {(customerType === 'all' || customerType === 'sub') && (
           <span className="flex items-center gap-1.5">
             <span
@@ -301,7 +296,7 @@ export default function ScatterPlot({
         <ComposedChart margin={{ top: 10, right: 10, bottom: 20, left: 10 }}>
           <CartesianGrid
             strokeDasharray=""
-            stroke="rgba(128,128,128,0.07)"
+            stroke={gridColor}
             vertical={false}
           />
           <XAxis
@@ -310,7 +305,7 @@ export default function ScatterPlot({
             domain={[0.4, 5.6]}
             ticks={[1, 2, 3, 4, 5]}
             tickFormatter={v => X_LABELS[v] || ''}
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: tickColor }}
             axisLine={false}
             tickLine={false}
             label={{
@@ -318,7 +313,7 @@ export default function ScatterPlot({
               position: 'insideBottom',
               offset: -10,
               fontSize: 10,
-              fill: '#9ca3af',
+              fill: tickColor,
             }}
           />
           <YAxis
@@ -326,7 +321,7 @@ export default function ScatterPlot({
             dataKey="y"
             domain={[0, maxY]}
             tickFormatter={v => '$' + v.toLocaleString()}
-            tick={{ fontSize: 10, fill: '#9ca3af' }}
+            tick={{ fontSize: 10, fill: tickColor }}
             axisLine={false}
             tickLine={false}
             label={{
@@ -334,7 +329,7 @@ export default function ScatterPlot({
               angle: -90,
               position: 'insideLeft',
               fontSize: 10,
-              fill: '#9ca3af',
+              fill: tickColor,
             }}
           />
 
@@ -343,7 +338,6 @@ export default function ScatterPlot({
             cursor={false}
           />
 
-          {/* Single scatter series — shape function handles circle vs triangle */}
           <Scatter
             data={allDots}
             shape={<CustomDot />}

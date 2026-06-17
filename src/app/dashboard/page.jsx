@@ -16,18 +16,17 @@ import AvgPercentileChart from '@/components/dashboard/AvgPercentileChart'
 import ScatterPlot from '@/components/dashboard/ScatterPlot'
 import BucketTable from '@/components/dashboard/BucketTable'
 import HealthTable from '@/components/dashboard/HealthTable'
-import SliderControl from '@/components/dashboard/SliderControl'
 
 function SectionLabel({ children }) {
   return (
-    <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+    <p className="text-xs font-medium text-gray-400 dark:text-[#6B6B70] uppercase tracking-wide mb-3">
       {children}
     </p>
   )
 }
 
 function Divider() {
-  return <hr className="border-gray-100 my-6" />
+  return <hr className="border-gray-100 dark:border-[#2D2D2F] my-6" />
 }
 
 function relativeTime(isoString) {
@@ -84,10 +83,10 @@ export default function DashboardPage() {
   // ── Loading state ─────────────────────────────────────────────────────────
   if (isLoadingFromSupabase) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#1C1C1E] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-500">Loading dashboard data...</p>
+          <p className="text-sm text-gray-500 dark:text-[#8E8E93]">Loading dashboard data...</p>
         </div>
       </div>
     )
@@ -96,10 +95,10 @@ export default function DashboardPage() {
   // ── Empty state ───────────────────────────────────────────────────────────
   if (!isReady) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#1C1C1E] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-sm text-gray-500 mb-1">No data uploaded yet.</p>
-          <p className="text-xs text-gray-400 mb-4">Visit the admin panel to upload data.</p>
+          <p className="text-sm text-gray-500 dark:text-[#8E8E93] mb-1">No data uploaded yet.</p>
+          <p className="text-xs text-gray-400 dark:text-[#6B6B70] mb-4">Visit the admin panel to upload data.</p>
           <button
             onClick={() => router.push('/admin')}
             className="text-xs bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -111,11 +110,10 @@ export default function DashboardPage() {
     )
   }
 
-  const repeatBadge = rawRepeatThreshold === 1 ? '1+ booking' : `${rawRepeatThreshold}+ bookings`
   const updatedLabel = relativeTime(uploadedAt)
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 dark:bg-[#1C1C1E]">
 
       <SidePanel
         country={country}
@@ -125,6 +123,12 @@ export default function DashboardPage() {
         dateRange={dateRange}
         onDateChange={setDateRange}
         availableYears={availableYears}
+        percentile={percentile}
+        rawPercentile={rawPercentile}
+        onPercentileChange={setRawPercentile}
+        repeatThreshold={repeatThreshold}
+        rawRepeatThreshold={rawRepeatThreshold}
+        onRepeatThresholdChange={setRawRepeatThreshold}
       />
 
       <div className="flex-1 md:ml-60 overflow-y-auto">
@@ -153,7 +157,7 @@ export default function DashboardPage() {
                 onClick={handlePublish}
                 className="px-3 py-1 rounded-md bg-amber-700 text-amber-50 hover:bg-amber-800 transition-colors font-medium"
               >
-                Publish & Get Link →
+                Publish &amp; Get Link →
               </button>
             )}
           </div>
@@ -179,10 +183,10 @@ export default function DashboardPage() {
           {/* Top bar */}
           <div className="flex items-start justify-between flex-wrap gap-4 mb-2">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+              <h1 className="text-2xl font-semibold text-gray-900 dark:text-[#F2F2F7] tracking-tight">
                 Booking frequency dashboard
               </h1>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-gray-400 dark:text-[#6B6B70] mt-1">
                 Panda Hub · customer cohort analysis
               </p>
             </div>
@@ -190,18 +194,18 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3">
               <div className={`flex items-center gap-1.5 transition-opacity duration-150 ${isComputing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 <div className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
-                <span className="text-xs text-gray-400">Updating...</span>
+                <span className="text-xs text-gray-400 dark:text-[#6B6B70]">Updating...</span>
               </div>
 
               {updatedLabel && (
-                <span className="text-xs text-gray-400 whitespace-nowrap">
+                <span className="text-xs text-gray-400 dark:text-[#6B6B70] whitespace-nowrap">
                   Updated {updatedLabel}
                 </span>
               )}
 
               <button
                 onClick={() => router.push('/admin')}
-                className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                className="text-xs border border-gray-200 dark:border-[#2D2D2F] rounded-lg px-3 py-1.5 bg-white dark:bg-[#242426] text-gray-700 dark:text-[#F2F2F7] hover:bg-gray-50 dark:hover:bg-[#2D2D2F] transition-colors"
               >
                 Upload new
               </button>
@@ -209,45 +213,17 @@ export default function DashboardPage() {
           </div>
 
           {/* Data summary line */}
-          <p className="text-xs text-gray-400 mb-8">
+          <p className="text-xs text-gray-400 dark:text-[#6B6B70] mb-8">
             {kpis.totalCustomers.toLocaleString()} customers
             {paymentsCount > 0 ? ` · ${paymentsCount.toLocaleString()} payments` : ''}
             {subscriberCount > 0 ? ` · ${subscriberCount.toLocaleString()} subscribers` : ''}
             {` · ${getFilterLabel(dateRange)}`}
           </p>
 
-          {/* Sliders */}
-          <div className="flex flex-col gap-2 mb-8">
-            <SliderControl
-              label="Percentile metric"
-              min={1} max={99} step={1}
-              value={rawPercentile}
-              onChange={setRawPercentile}
-              color="blue"
-              badge={
-                <span className="text-xs font-semibold bg-blue-100 text-blue-700 rounded-md px-2.5 py-1 shrink-0 w-12 text-center tabular-nums">
-                  P{rawPercentile}
-                </span>
-              }
-            />
-            <SliderControl
-              label="Repeat rate threshold"
-              min={1} max={5} step={1}
-              value={rawRepeatThreshold}
-              onChange={setRawRepeatThreshold}
-              color="green"
-              badge={
-                <span className="text-xs font-semibold bg-green-100 text-green-700 rounded-md px-2.5 py-1 shrink-0 w-24 text-center tabular-nums">
-                  {repeatBadge}
-                </span>
-              }
-            />
-          </div>
-
           {/* Charts area dims while recomputing */}
           <div className={`transition-opacity duration-150 ${isComputing ? 'opacity-60' : 'opacity-100'}`}>
 
-            <SectionLabel>Booking metrics</SectionLabel>
+            <SectionLabel>Mean across segments</SectionLabel>
             <div className="mb-8">
               <KPIBooking
                 kpis={kpis}
@@ -273,7 +249,7 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <BucketBarChart bucketStats={bucketStats} />
-              <LTVDonutChart bucketStats={bucketStats} />
+              <LTVDonutChart bucketStats={bucketStats} totalLTV={kpis.totalLTV} />
             </div>
 
             <div className="mb-4">

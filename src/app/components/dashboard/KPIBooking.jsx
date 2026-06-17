@@ -9,10 +9,10 @@ function fmtK(n) {
 
 function Card({ label, value, sub }) {
   return (
-    <div className="bg-gray-50 rounded-lg p-3">
-      <div className="text-xs text-gray-400 mb-1 tracking-wide">{label}</div>
-      <div className="text-2xl font-medium text-gray-900">{value}</div>
-      <div className="text-xs text-gray-500 mt-0.5">{sub}</div>
+    <div className="bg-gray-50 dark:bg-[#2D2D2F] rounded-lg p-3">
+      <div className="text-xs text-gray-400 dark:text-[#6B6B70] mb-1 tracking-wide">{label}</div>
+      <div className="text-2xl font-medium text-gray-900 dark:text-[#F2F2F7]">{value}</div>
+      <div className="text-xs text-gray-500 dark:text-[#8E8E93] mt-0.5">{sub}</div>
     </div>
   )
 }
@@ -36,7 +36,7 @@ export default function KPIBooking({ kpis, dateRange, percentile, repeatThreshol
       <Card
         label="Avg LTV / customer"
         value={fmt(kpis.avgLTV)}
-        sub="Mean across segment"
+        sub="Mean across segments"
       />
       <Card
         label={`P${percentile} LTV`}
@@ -46,7 +46,7 @@ export default function KPIBooking({ kpis, dateRange, percentile, repeatThreshol
       <Card
         label="Repeat rate"
         value={kpis.repeatRate.toFixed(1) + '%'}
-        sub={`Booked ${repeatLabel}`}
+        sub={`Made ${repeatLabel}`}
       />
     </div>
   )

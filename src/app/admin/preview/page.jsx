@@ -103,8 +103,17 @@ export default function AdminPreviewPage() {
         </button>
 
         <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-          <span className="text-xs text-amber-600">Preview — not yet published</span>
+          {publishedSlug ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+              <span className="text-xs text-gray-500">Published</span>
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
+              <span className="text-xs text-amber-600">Preview — not yet published</span>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
@@ -281,7 +290,7 @@ export default function AdminPreviewPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <BucketBarChart bucketStats={bucketStats} />
-                <LTVDonutChart bucketStats={bucketStats} />
+                <LTVDonutChart bucketStats={bucketStats} totalLTV={kpis.totalLTV} />
               </div>
 
               <div className="mb-4">
