@@ -77,6 +77,12 @@ function CountryPillToggle({ country, onChange }) {
   )
 }
 
+function parseLocalDate(str) {
+  if (!str) return null
+  const [year, month, day] = str.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
 function isDateActive(dateRange, value) {
   if (typeof value === 'number') return typeof dateRange === 'number' && dateRange === value
   return typeof dateRange === 'object' && dateRange !== null && dateRange.type === value.type
@@ -122,8 +128,8 @@ export default function SidePanel({
     if (!canApplyCustom) return
     onDateChange({
       type: 'custom',
-      start: new Date(customStart),
-      end: new Date(customEnd),
+      start: parseLocalDate(customStart),
+      end: parseLocalDate(customEnd),
     })
   }
 

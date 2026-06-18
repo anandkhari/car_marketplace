@@ -15,14 +15,27 @@ export function getFilterLabel(dateRange) {
   if (dateRange?.type === 'lastYear') return 'Last year'
   if (dateRange?.type === 'year') return String(dateRange.year)
   if (dateRange?.type === 'custom') {
-    const s = new Date(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    const e = new Date(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    const s = safeDate(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const e = safeDate(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     return s + ' – ' + e
   }
   return 'Last 90 days'
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
+function parseLocalDate(str) {
+  if (!str) return null
+  const [year, month, day] = str.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+function safeDate(val) {
+  if (!val) return null
+  if (val instanceof Date) return val
+  const [y, m, d] = String(val).split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 function toDateStr(date) {
   const d = date instanceof Date ? date : new Date(date)
   return d.toISOString().split('T')[0]
@@ -87,8 +100,8 @@ export default function DateRangeFilter({ dateRange, onChange, availableYears = 
     if (new Date(customStart) > new Date(customEnd)) return
     onChange({
       type: 'custom',
-      start: new Date(customStart),
-      end: new Date(customEnd),
+      start: parseLocalDate(customStart),
+      end: parseLocalDate(customEnd),
     })
   }
 
