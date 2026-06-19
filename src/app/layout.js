@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Panda Hub",
-  description: "Booking frequency dashboard for Panda Hub",
+  title: "Panda Frequency Dashboard",
+  description: "Panda Frequency Dashboard for Panda Hub",
 };
 
 export default function RootLayout({ children }) {

@@ -78,7 +78,7 @@ export default function LandingPage() {
 
       {/* Subtitle */}
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
-        Booking Frequency Dashboard
+        Panda Frequency Dashboard
       </p>
 
       {/* Description */}

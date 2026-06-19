@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useDashboardStore } from '@/store/dashboardStore'
 import { filterByDateRange } from '@/lib/analytics/filter'
-import { computeKPIs, computeBucketStats } from '@/lib/analytics/metrics'
+import { computeKPIs, computeBucketStats, computeTipStats } from '@/lib/analytics/metrics'
 import { computeBookingOutcomes } from '@/lib/analytics/bookingOutcomes'
 
 export function useDashboard() {
@@ -85,6 +85,20 @@ export function useDashboard() {
     [viewCustomers]
   )
 
+  // NEW: Tip calculation based on customerType toggle and date range
+  const tipCustomers = useMemo(() => {
+    if (customerType === 'sub')
+      return filteredCustomers.filter(c => c.isSubscriber)
+    if (customerType === 'non')
+      return filteredCustomers.filter(c => !c.isSubscriber)
+    return filteredCustomers
+  }, [filteredCustomers, customerType])
+
+  const tipStats = useMemo(
+    () => computeTipStats(tipCustomers),
+    [tipCustomers]
+  )
+
   // All-three bucket stat sets for AvgPercentileChart and BucketTable tabs
   const allBucketStats = useMemo(() =>
     computeBucketStats(filteredCustomers, percentile),
@@ -100,6 +114,9 @@ export function useDashboard() {
     computeBucketStats(filteredNonSubs, percentile),
     [filteredNonSubs, percentile]
   )
+
+  console.log('tipStats:', tipStats)
+  console.log('filteredCustomers sample hasTipped:', filteredCustomers.slice(0, 5).map(c => c.hasTipped))
 
   return {
     // country
@@ -139,5 +156,7 @@ export function useDashboard() {
     allBucketStats,
     subBucketStats,
     nonBucketStats,
+    // NEW: Computed Tip Stats
+    tipStats,
   }
 }

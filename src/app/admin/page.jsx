@@ -159,7 +159,7 @@ export default function AdminPage() {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-[#F2F2F7] tracking-tight mb-1">
-            Booking frequency dashboard
+            PANDA FREQUENCY DASHBOARD
           </h1>
           <p className="text-sm text-gray-400 dark:text-[#6B6B70]">Upload data to preview and publish</p>
         </div>

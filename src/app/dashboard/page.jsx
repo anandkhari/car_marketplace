@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/store/dashboardStore'
 import { copyToClipboard } from '@/lib/copyToClipboard'
-import { getFilterLabel } from '@/components/dashboard/DateRangeFilter'
+import { getFilterLabel } from '@/lib/analytics/filter'
 import SidePanel from '@/components/dashboard/SidePanel'
 import KPIBooking from '@/components/dashboard/KPIBooking'
+import KPITips from '@/components/dashboard/KPITips'
 import KPIHealth from '@/components/dashboard/KPIHealth'
 import BookingOutcomes from '@/components/dashboard/BookingOutcomes'
 import BucketBarChart from '@/components/dashboard/BucketBarChart'
@@ -66,6 +67,7 @@ export default function DashboardPage() {
     allBucketStats,
     subBucketStats,
     nonBucketStats,
+    tipStats, // NEW: Extract tipStats
   } = useDashboard()
 
   async function handlePublish() {
@@ -184,7 +186,7 @@ export default function DashboardPage() {
           <div className="flex items-start justify-between flex-wrap gap-4 mb-2">
             <div>
               <h1 className="text-2xl font-semibold text-gray-900 dark:text-[#F2F2F7] tracking-tight">
-                Booking frequency dashboard
+                PANDA FREQUENCY DASHBOARD
               </h1>
               <p className="text-sm text-gray-400 dark:text-[#6B6B70] mt-1">
                 Panda Hub · customer cohort analysis
@@ -230,6 +232,16 @@ export default function DashboardPage() {
                 dateRange={dateRange}
                 percentile={percentile}
                 repeatThreshold={repeatThreshold}
+                customerType={customerType}
+              />
+            </div>
+
+            {/* NEW: Tip analysis section added here */}
+            <SectionLabel>Tip analysis</SectionLabel>
+            <div className="mb-8">
+              <KPITips
+                tipStats={tipStats}
+                customerType={customerType}
               />
             </div>
 

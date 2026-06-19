@@ -23,7 +23,7 @@ export default function UploadZone({ onFileUpload, isLoading }) {
       <div className="w-full max-w-lg">
         <div className="mb-8 text-center">
           <h1 className="text-xl font-medium text-gray-900 mb-1">
-            Booking frequency dashboard
+            PANDA FREQUENCY DASHBOARD
           </h1>
           <p className="text-sm text-gray-500">
             Car detailing marketplace · customer cohort analysis

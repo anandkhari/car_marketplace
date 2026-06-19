@@ -32,19 +32,68 @@ function toCustomerRow(country, customer) {
     last_payment: formatDate(customer.lastPayment),
     first_payment: formatDate(customer.firstPayment),
     bucket: customer.bucket,
+    // NEW: Tip fields for storage
+    tip_count: customer.tipCount || 0,
+    tip_total: customer.tipTotal || 0,
+    has_tipped: customer.hasTipped || false,
+    highest_tip: customer.highestTip || 0,
+    lowest_tip: customer.lowestTip || 0,
+  }
+}
+
+// ─── RETRY HELPERS ────────────────────────────────────────────────────────────
+async function insertBatchWithRetry(tableName, batch, maxRetries = 3, delayMs = 2000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const { error } = await supabase
+      .from(tableName)
+      .insert(batch)
+
+    if (!error) return
+
+    console.warn(
+      `Batch insert attempt ${attempt}/${maxRetries} failed:`,
+      error.message
+    )
+
+    if (attempt < maxRetries) {
+      await new Promise(r => setTimeout(r, delayMs))
+    } else {
+      throw new Error(
+        `Batch failed after ${maxRetries} attempts: ` +
+        error.message
+      )
+    }
+  }
+}
+
+async function deleteWithRetry(tableName, column, value, maxRetries = 3, delayMs = 2000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const { error } = await supabase
+      .from(tableName)
+      .delete()
+      .eq(column, value)
+
+    if (!error) return
+
+    console.warn(
+      `Delete attempt ${attempt}/${maxRetries} failed:`,
+      error.message
+    )
+
+    if (attempt < maxRetries) {
+      await new Promise(r => setTimeout(r, delayMs))
+    } else {
+      throw new Error(
+        `Delete failed after ${maxRetries} attempts: ` +
+        error.message
+      )
+    }
   }
 }
 
 export async function saveSnapshot(country, payload) {
   // Step 1 — delete existing customer rows for this country
-  const { error: deleteCustomersError } = await supabase
-    .from('customer_snapshots')
-    .delete()
-    .eq('country', country)
-
-  if (deleteCustomersError) {
-    throw new Error('Failed to clear existing customer snapshot: ' + deleteCustomersError.message)
-  }
+  await deleteWithRetry('customer_snapshots', 'country', country)
 
   // Step 2 — upsert metadata into dashboard_snapshots
   const { data, error: upsertError } = await supabase
@@ -69,13 +118,7 @@ export async function saveSnapshot(country, payload) {
 
   for (let i = 0; i < customerRows.length; i += CUSTOMER_BATCH_SIZE) {
     const batch = customerRows.slice(i, i + CUSTOMER_BATCH_SIZE)
-    const { error: insertCustomersError } = await supabase
-      .from('customer_snapshots')
-      .insert(batch)
-
-    if (insertCustomersError) {
-      throw new Error('Failed to save customer snapshot: ' + insertCustomersError.message)
-    }
+    await insertBatchWithRetry('customer_snapshots', batch)
   }
 
   // Step 4 — log to upload history (non-fatal on failure)
@@ -123,6 +166,12 @@ function toJoinedCustomer(r) {
     email: '',
     city: '',
     country: '',
+    // NEW: Tip fields for hydration
+    tipCount: r.tip_count || 0,
+    tipTotal: r.tip_total || 0,
+    hasTipped: r.has_tipped || false,
+    highestTip: r.highest_tip || 0,
+    lowestTip: r.lowest_tip || 0,
   }
 }
 
@@ -232,13 +281,7 @@ async function insertPublishedCustomers(slug, country, joinedCustomers) {
 
   for (let i = 0; i < customerRows.length; i += CUSTOMER_BATCH_SIZE) {
     const batch = customerRows.slice(i, i + CUSTOMER_BATCH_SIZE)
-    const { error } = await supabase
-      .from('published_customers')
-      .insert(batch)
-
-    if (error) {
-      throw new Error('Failed to publish customers: ' + error.message)
-    }
+    await insertBatchWithRetry('published_customers', batch)
   }
 }
 
@@ -354,3 +397,16 @@ export async function loadPublishedHistory() {
 
   return data || []
 }
+
+/*
+IMPORTANT: Run this SQL in Supabase before uploading new data:
+
+
+
+ALTER TABLE published_customers
+  ADD COLUMN IF NOT EXISTS tip_count integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS tip_total integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS has_tipped boolean DEFAULT false,
+  ADD COLUMN IF NOT EXISTS highest_tip integer DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS lowest_tip integer DEFAULT 0;
+*/

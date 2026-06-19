@@ -164,7 +164,7 @@ export default function UploadPanel({ onAllReady }) {
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight mb-1">
-            Booking frequency dashboard
+            PANDA FREQUENCY DASHBOARD
           </h1>
           <p className="text-sm text-gray-400">
             Car detailing marketplace · customer cohort analysis

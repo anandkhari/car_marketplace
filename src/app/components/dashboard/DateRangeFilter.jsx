@@ -2,38 +2,11 @@
 
 import { useState } from 'react'
 
-// ── Label helper — used by KPIBooking and data summary lines ──────────────────
-export function getFilterLabel(dateRange) {
-  if (typeof dateRange === 'number') {
-    if (dateRange === 0) return 'All time'
-    if (dateRange === 365) return 'Last 12 months'
-    return 'Last ' + dateRange + ' days'
-  }
-  if (dateRange?.type === 'currentYear') return 'Current year'
-  if (dateRange?.type === 'monthToDate') return 'Month to date'
-  if (dateRange?.type === 'yearToDate') return 'Year to date'
-  if (dateRange?.type === 'lastYear') return 'Last year'
-  if (dateRange?.type === 'year') return String(dateRange.year)
-  if (dateRange?.type === 'custom') {
-    const s = safeDate(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    const e = safeDate(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    return s + ' – ' + e
-  }
-  return 'Last 90 days'
-}
-
 // ── Internal helpers ──────────────────────────────────────────────────────────
 function parseLocalDate(str) {
   if (!str) return null
   const [year, month, day] = str.split('-').map(Number)
   return new Date(year, month - 1, day)
-}
-
-function safeDate(val) {
-  if (!val) return null
-  if (val instanceof Date) return val
-  const [y, m, d] = String(val).split('-').map(Number)
-  return new Date(y, m - 1, d)
 }
 
 function toDateStr(date) {

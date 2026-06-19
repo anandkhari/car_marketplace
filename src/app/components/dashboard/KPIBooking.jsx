@@ -1,4 +1,4 @@
-import { getFilterLabel } from './DateRangeFilter'
+import { getFilterLabel } from '@/lib/analytics/filter'
 
 function fmt(n) { return '$' + Math.round(n).toLocaleString() }
 function fmtK(n) {
@@ -17,14 +17,29 @@ function Card({ label, value, sub }) {
   )
 }
 
-export default function KPIBooking({ kpis, dateRange, percentile, repeatThreshold }) {
-  const rangeLabel  = getFilterLabel(dateRange)
-  const repeatLabel = repeatThreshold === 1 ? '1+ booking' : `${repeatThreshold}+ bookings`
+export default function KPIBooking({ kpis, dateRange, percentile, repeatThreshold, customerType = 'all' }) {
+  const rangeLabel = getFilterLabel(dateRange)
+  const nLabel = repeatThreshold === 1 ? '1+ booking' : `${repeatThreshold}+ bookings`
+
+  const customerLabel =
+    customerType === 'sub' ? 'Total subscribers' :
+    customerType === 'non' ? 'Total non-subscribers' :
+    'Total customers'
+
+  const avgLabel =
+    customerType === 'sub' ? 'Avg LTV / subscriber' :
+    customerType === 'non' ? 'Avg LTV / non-subscriber' :
+    'Avg LTV / customer'
+
+  const repeatSub =
+    customerType === 'sub' ? `Subscribers made ${nLabel}` :
+    customerType === 'non' ? `Non-subscribers made ${nLabel}` :
+    `Made ${nLabel}`
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
       <Card
-        label="Total customers"
+        label={customerLabel}
         value={kpis.totalCustomers.toLocaleString()}
         sub={rangeLabel}
       />
@@ -34,7 +49,7 @@ export default function KPIBooking({ kpis, dateRange, percentile, repeatThreshol
         sub="Sum of net revenue"
       />
       <Card
-        label="Avg LTV / customer"
+        label={avgLabel}
         value={fmt(kpis.avgLTV)}
         sub="Mean across segments"
       />
@@ -46,7 +61,7 @@ export default function KPIBooking({ kpis, dateRange, percentile, repeatThreshol
       <Card
         label="Repeat rate"
         value={kpis.repeatRate.toFixed(1) + '%'}
-        sub={`Made ${repeatLabel}`}
+        sub={repeatSub}
       />
     </div>
   )

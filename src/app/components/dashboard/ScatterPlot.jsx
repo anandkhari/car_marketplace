@@ -14,7 +14,8 @@ import {
 import { useTheme } from 'next-themes'
 import { BUCKETS } from '@/lib/analytics/constants'
 
-const TOTAL_DOT_LIMIT = 800
+// Increased slightly for better density without killing performance
+const TOTAL_DOT_LIMIT = 1000
 
 const BUCKET_INDEX = {
   '1 booking':   0,
@@ -64,18 +65,19 @@ function computePercentile(arr, p) {
 }
 
 function sampleCustomers(customers) {
-  const bucketable = customers.filter(
+  // Sort descending by LTV so we never lose the top spenders during sampling
+  const sorted = [...customers].sort((a, b) => {
+    const yA = a.net ?? a.netVolume ?? 0
+    const yB = b.net ?? b.netVolume ?? 0
+    return yB - yA
+  })
+
+  const bucketable = sorted.filter(
     c => c.bucket != null && BUCKET_INDEX[c.bucket] !== undefined
   )
-  const subs    = bucketable.filter(c =>  c.isSubscriber)
-  const nonSubs = bucketable.filter(c => !c.isSubscriber)
-  const nonSubLimit = TOTAL_DOT_LIMIT - subs.length
-  let sampledNonSubs = nonSubs
-  if (nonSubs.length > nonSubLimit) {
-    const step = Math.ceil(nonSubs.length / nonSubLimit)
-    sampledNonSubs = nonSubs.filter((_, i) => i % step === 0)
-  }
-  return [...subs, ...sampledNonSubs]
+  
+  // Take the absolute top TOTAL_DOT_LIMIT across the board
+  return bucketable.slice(0, TOTAL_DOT_LIMIT)
 }
 
 function buildAllDots(customers) {
@@ -85,10 +87,24 @@ function buildAllDots(customers) {
     if (bi < 0) return
     const yPos = c.net ?? c.netVolume ?? 0
     if (yPos <= 0) return
-    const seed = stableIndex(c.id)
+    
+    // FIX 1: Provide a random fallback string if the customer ID is missing 
+    // so Unidentified Customers don't share the same seed.
+    const safeId = c.id || `unidentified-${Math.random().toString()}`
+    const seed = stableIndex(safeId)
+
+    // FIX 2: Multiply the X jitter to spread them out a bit wider horizontally
+    // (Original was max +/- 0.14, this makes it +/- 0.35)
+    const xOffset = jitter(seed, bi * 1000) * 2.5
+
+    // FIX 3: Add Y-axis jitter. We multiply by 50 to shift the dot randomly 
+    // up or down by about +/- $14. This breaks the flat-line visual illusion!
+    const yOffset = jitter(seed, bi * 2000) * 50 
+
     dots.push({
-      x: bi + 1 + jitter(seed, bi * 1000),
-      y: yPos,
+      id: safeId, // Use the safe ID for React keys
+      x: bi + 1 + xOffset,
+      y: yPos + yOffset,  // Apply the vertical jitter
       bucketIndex: bi,
       name: c.name || 'Unidentified Customer',
       bucket: c.bucket,
@@ -138,12 +154,14 @@ function CustomDot(props) {
   if (payload.isSubscriber) {
     return (
       <circle
+        key={`sub-${payload.id}`} // Enforce stable keys
         cx={cx}
         cy={cy}
         r={3.5}
         fill="rgba(24,95,165,0.45)"
         stroke="rgba(24,95,165,0.7)"
         strokeWidth={0.5}
+        style={{ transition: 'all 0.3s ease-out' }} // Smooth coordinate changes
       />
     )
   }
@@ -156,10 +174,12 @@ function CustomDot(props) {
   ].join(' ')
   return (
     <polygon
+      key={`non-${payload.id}`} // Enforce stable keys
       points={pts}
       fill="rgba(99,153,34,0.45)"
       stroke="rgba(99,153,34,0.7)"
       strokeWidth={0.5}
+      style={{ transition: 'all 0.3s ease-out' }} // Smooth coordinate changes
     />
   )
 }
@@ -201,6 +221,10 @@ export default function ScatterPlot({
   percentile,
   rawPercentile,
 }) {
+
+
+  console.log("🔥 SCATTER DATA INBOUND:", joinedCustomers.length, "customers | Type:", customerType);
+
   const { resolvedTheme } = useTheme()
   const isDark = resolvedTheme === 'dark'
 
@@ -218,6 +242,9 @@ export default function ScatterPlot({
       customers = sampledCustomers.filter(c => c.isSubscriber)
     else if (customerType === 'non')
       customers = sampledCustomers.filter(c => !c.isSubscriber)
+
+    console.log(`🎯 FILTERED DOTS TO DRAW (${customerType}):`, customers.length);
+
     return buildAllDots(customers)
   }, [sampledCustomers, customerType])
 
@@ -341,6 +368,7 @@ export default function ScatterPlot({
           <Scatter
             data={allDots}
             shape={<CustomDot />}
+            isAnimationActive={false} // Crucial: Recharts animation clashes with React keys
           />
 
           <Line
