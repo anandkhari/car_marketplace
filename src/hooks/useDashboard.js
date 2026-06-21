@@ -118,6 +118,18 @@ export function useDashboard() {
   console.log('tipStats:', tipStats)
   console.log('filteredCustomers sample hasTipped:', filteredCustomers.slice(0, 5).map(c => c.hasTipped))
 
+  console.log('tip debug:', {
+    totalCustomers: filteredCustomers.length,
+    tippingCustomers: filteredCustomers
+      .filter(c => c.hasTipped).length,
+    sampleHasTipped: filteredCustomers
+      .slice(0,3)
+      .map(c => c.hasTipped),
+    sampleTipTotal: filteredCustomers
+      .slice(0,3)
+      .map(c => c.tipTotal),
+  })
+
   return {
     // country
     country,

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   ComposedChart,
   Scatter,
@@ -221,7 +222,7 @@ export default function ScatterPlot({
   percentile,
   rawPercentile,
 }) {
-
+  const router = useRouter()
 
   console.log("🔥 SCATTER DATA INBOUND:", joinedCustomers.length, "customers | Type:", customerType);
 
@@ -276,8 +277,19 @@ export default function ScatterPlot({
 
   return (
     <div className="bg-white dark:bg-[#242426] border border-gray-100 dark:border-[#2D2D2F] rounded-xl p-4 mb-3">
-      <div className="text-sm font-medium text-gray-900 dark:text-[#F2F2F7] mb-0.5">
-        Individual customer LTV — all buckets
+      <div className="flex items-center justify-between mb-0.5">
+        <div className="text-sm font-medium text-gray-900 dark:text-[#F2F2F7]">
+          Individual customer LTV — all buckets
+        </div>
+        <button
+          onClick={() => router.push('/dashboard/scatter')}
+          className="text-xs text-gray-400 dark:text-[#6B6B70] hover:text-gray-700 dark:hover:text-[#F2F2F7] flex items-center gap-1 border border-gray-200 dark:border-[#2D2D2F] rounded-lg px-2 py-1 transition-colors"
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+          </svg>
+          Expand
+        </button>
       </div>
       <div className="text-xs text-gray-400 dark:text-[#6B6B70] mb-4">
         Each dot = one customer · x-axis jittered within bucket ·
