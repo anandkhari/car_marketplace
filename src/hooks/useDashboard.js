@@ -18,7 +18,7 @@ export function useDashboard() {
   } = useDashboardStore()
 
   const [country, setCountry] = useState('canada')
-  const [dateRange, setDateRange] = useState(90)
+  const [dateRange, setDateRange] = useState(0)
   const [customerType, setCustomerType] = useState('all') // 'all' | 'sub' | 'non'
 
   // Slider display values (instant)

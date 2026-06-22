@@ -9,6 +9,7 @@ import {
 } from 'recharts'
 import { useTheme } from 'next-themes'
 import { BUCKET_COLORS } from '@/lib/analytics/constants'
+import { formatMoneyCompact } from '@/lib/formatMoney'
 
 function CustomTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
@@ -36,9 +37,7 @@ export default function LTVDonutChart({ bucketStats, totalLTV }) {
     value: totalLTV > 0 ? parseFloat((b.totalLTV / totalLTV * 100).toFixed(1)) : 0,
   }))
 
-  const formattedTotal = totalLTV >= 1000000
-    ? '$' + (totalLTV / 1000000).toFixed(1) + 'm'
-    : '$' + (totalLTV / 1000).toFixed(0) + 'k'
+  const formattedTotal = formatMoneyCompact(totalLTV)
 
   return (
     <div className="bg-white dark:bg-[#242426] border border-gray-100 dark:border-[#2D2D2F] rounded-xl p-4">

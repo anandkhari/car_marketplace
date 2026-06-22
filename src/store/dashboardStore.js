@@ -5,7 +5,7 @@ import Papa from 'papaparse'
 import { parsePayments } from '@/lib/analytics/parsePayments'
 import { parseCustomers } from '@/lib/analytics/parseCustomers'
 import { joinPaymentsAndCustomers, prepareSavePayload } from '@/lib/analytics/join'
-import { loadAllSnapshots, saveSnapshot, publishSnapshot, loadPublishedHistory } from '@/lib/supabaseService'
+import { loadAllSnapshots, saveSnapshot, publishSnapshot, loadPublishedHistory, deletePublishedSnapshot } from '@/lib/supabaseService'
 
 const PAYMENT_REQUIRED = [
   'Customer ID', 'Amount', 'Amount Refunded',
@@ -118,6 +118,9 @@ export function DashboardProvider({ children }) {
         try {
           const history = await loadPublishedHistory()
           setPublishHistory(history)
+          if (history.length > 0) {
+            setPublishedSlug(history[0].slug)
+          }
         } catch {
           // non-fatal — publish history is nice-to-have on mount
         }
@@ -203,6 +206,18 @@ export function DashboardProvider({ children }) {
       setIsPublishing(false)
     }
   }, [canada, us])
+
+  const deletePublishedLink = useCallback(async (slug) => {
+    try {
+      await deletePublishedSnapshot(slug)
+      setPublishHistory(prev => prev.filter(row => row.slug !== slug))
+      setPublishedSlug(prev => prev === slug ? null : prev)
+      return true
+    } catch (err) {
+      console.error('Delete failed:', err)
+      throw err
+    }
+  }, [])
 
   const uploadFile = useCallback((countryKey, type, file) => {
     const currentCountry = countryKey === 'canada' ? canada : us
@@ -296,6 +311,7 @@ export function DashboardProvider({ children }) {
       publishedSlug,
       publishHistory,
       publishDashboard,
+      deletePublishedLink,
     }}>
       {children}
     </DashboardContext.Provider>

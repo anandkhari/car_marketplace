@@ -1,10 +1,6 @@
 'use client'
 
-function fmtK(n) {
-  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'm'
-  if (n >= 1000) return '$' + (n / 1000).toFixed(0) + 'k'
-  return '$' + Math.round(n).toLocaleString()
-}
+import { formatMoneyCompact as fmtK } from '@/lib/formatMoney'
 
 function RefundBadge({ rate }) {
   const isHigh = rate > 10

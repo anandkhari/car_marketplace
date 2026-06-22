@@ -7,9 +7,9 @@ export default function KPITips({ tipStats, customerType = 'all' }) {
     lowestTip = 0,
   } = tipStats || {}
 
-  const formatMoney = (val) => {
+  const fmt = (val) => {
     if (tipStats == null) return '—'
-    return '$' + (val || 0).toLocaleString()
+    return '$' + (val || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
   const formatNumber = (val) => {
     if (tipStats == null) return '—'
@@ -40,7 +40,7 @@ export default function KPITips({ tipStats, customerType = 'all' }) {
       {/* Tile 1 — Total tip amount */}
       <div className={cardClass}>
         <div className={labelClass}>Total tip amount</div>
-        <div className={valueClass}>{formatMoney(totalTipAmount)}</div>
+        <div className={valueClass}>{fmt(totalTipAmount)}</div>
         <div className={subClass}>All tips collected</div>
       </div>
 
@@ -58,21 +58,21 @@ export default function KPITips({ tipStats, customerType = 'all' }) {
       {/* Tile 3 — Avg tip per customer */}
       <div className={cardClass}>
         <div className={labelClass}>{getAvgLabel()}</div>
-        <div className={valueClass}>{formatMoney(avgTipPerCustomer)}</div>
+        <div className={valueClass}>{fmt(avgTipPerCustomer)}</div>
         <div className={subClass}>Mean tip amount</div>
       </div>
 
       {/* Tile 4 — Highest tip */}
       <div className={cardClass}>
         <div className={labelClass}>Highest tip</div>
-        <div className={valueClass}>{formatMoney(highestTip)}</div>
+        <div className={valueClass}>{fmt(highestTip)}</div>
         <div className={subClass}>Single payment</div>
       </div>
 
       {/* Tile 5 — Lowest tip */}
       <div className={cardClass}>
         <div className={labelClass}>Lowest tip</div>
-        <div className={valueClass}>{formatMoney(lowestTip)}</div>
+        <div className={valueClass}>{fmt(lowestTip)}</div>
         <div className={subClass}>Single payment</div>
       </div>
 

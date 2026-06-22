@@ -1,12 +1,6 @@
 import { getFilterLabel } from '@/lib/analytics/filter'
 import { getCustomerLabel } from '@/lib/customerLabel'
-
-function fmt(n) { return '$' + Math.round(n).toLocaleString() }
-function fmtK(n) {
-  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'm'
-  if (n >= 1000) return '$' + (n / 1000).toFixed(0) + 'k'
-  return fmt(n)
-}
+import { formatMoney, formatMoneyCompact } from '@/lib/formatMoney'
 
 function Card({ label, value, sub }) {
   return (
@@ -51,17 +45,17 @@ export default function KPIBooking({ kpis, dateRange, percentile, repeatThreshol
       />
       <Card
         label="Total LTV"
-        value={fmtK(kpis.totalLTV)}
+        value={formatMoneyCompact(kpis.totalLTV)}
         sub="Sum of net revenue"
       />
       <Card
         label={avgLabel}
-        value={fmt(kpis.avgLTV)}
+        value={formatMoney(kpis.avgLTV)}
         sub={meanLabel}
       />
       <Card
         label={`P${percentile} LTV`}
-        value={fmt(kpis.percentileLTV)}
+        value={formatMoney(kpis.percentileLTV)}
         sub={`${percentile}th percentile`}
       />
       <Card

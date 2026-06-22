@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useTheme } from 'next-themes'
 import { useParams } from 'next/navigation'
 import { loadPublishedSnapshot } from '@/lib/supabaseService'
 import { filterByDateRange } from '@/lib/analytics/filter'
@@ -53,9 +54,13 @@ export default function ViewSlugPage() {
   const [isLoading, setIsLoading]         = useState(true)
   const [error, setError]                 = useState(null)
 
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [country, setCountry]                   = useState('us')
-  const [dateRange, setDateRange]               = useState(90)
+  const [dateRange, setDateRange]               = useState(0)
+  const [dotFilter, setDotFilter]               = useState('all')
   const [customerType, setCustomerType]         = useState('all')
   const [percentile, setPercentile]             = useState(50)
   const [rawPercentile, setRawPercentile]       = useState(50)
@@ -310,11 +315,28 @@ export default function ViewSlugPage() {
                 </div>
 
                 <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-gray-400 dark:text-[#6B6B70] uppercase tracking-wide">
+                      Customer scatter
+                    </p>
+                    <select
+                      value={dotFilter}
+                      onChange={e => setDotFilter(e.target.value)}
+                      className="text-xs border border-gray-200 dark:border-[#2D2D2F] rounded-lg px-2 py-1.5 bg-white dark:bg-[#242426] text-gray-700 dark:text-[#F2F2F7] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="all">All customers</option>
+                      <option value="top">Top Customers (LTV over $1,000)</option>
+                      <option value="loyal">Loyal (1+ year)</option>
+                      <option value="generous">Generous (tips over $100)</option>
+                    </select>
+                  </div>
                   <ScatterPlot
-                    joinedCustomers={filteredCustomers}
+                    filteredCustomers={filteredCustomers}
                     customerType={customerType}
-                    percentile={percentile}
+                    dotFilter={dotFilter}
+                    isDark={isDark}
                     rawPercentile={rawPercentile}
+                    percentile={percentile}
                   />
                 </div>
 

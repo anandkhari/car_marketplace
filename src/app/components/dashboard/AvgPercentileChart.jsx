@@ -5,6 +5,7 @@ import {
   Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { useTheme } from 'next-themes'
+import { formatMoney } from '@/lib/formatMoney'
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
@@ -13,7 +14,7 @@ function CustomTooltip({ active, payload, label }) {
       <p className="text-xs font-medium text-gray-900 dark:text-[#F2F2F7] mb-1">{label}</p>
       {payload.map((p, i) => (
         <p key={i} className="text-xs mt-0.5" style={{ color: p.fill }}>
-          {p.name}: ${Math.round(p.value).toLocaleString()}
+          {p.name}: {formatMoney(p.value)}
         </p>
       ))}
     </div>
@@ -31,10 +32,10 @@ export default function AvgPercentileChart({ allBucketStats, subBucketStats, non
 
   const data = allBucketStats.map((b, i) => ({
     bucket: b.bucket,
-    'All — Avg': Math.round(b.avgLTV),
-    [`All — ${pLabel}`]: Math.round(b.percentileLTV),
-    'Sub — Avg': Math.round(subBucketStats[i]?.avgLTV ?? 0),
-    'Non-sub — Avg': Math.round(nonBucketStats[i]?.avgLTV ?? 0),
+    'All — Avg': b.avgLTV,
+    [`All — ${pLabel}`]: b.percentileLTV,
+    'Sub — Avg': subBucketStats[i]?.avgLTV ?? 0,
+    'Non-sub — Avg': nonBucketStats[i]?.avgLTV ?? 0,
   }))
 
   const seriesWithLabel = [

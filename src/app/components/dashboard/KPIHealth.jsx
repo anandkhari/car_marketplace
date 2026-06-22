@@ -2,12 +2,7 @@
 
 import { useTheme } from 'next-themes'
 import { getCustomerLabel } from '@/lib/customerLabel'
-
-function fmtK(n) {
-  if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'm'
-  if (n >= 1000) return '$' + (n / 1000).toFixed(0) + 'k'
-  return '$' + Math.round(n).toLocaleString()
-}
+import { formatMoneyCompact } from '@/lib/formatMoney'
 
 function Card({ label, value, sub, lightBg, darkBg, lightText, darkText }) {
   const { resolvedTheme } = useTheme()
@@ -32,7 +27,7 @@ export default function KPIHealth({ kpis, customerType = 'all' }) {
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
       <Card
         label="Gross revenue"
-        value={fmtK(kpis.gross)}
+        value={formatMoneyCompact(kpis.gross)}
         sub="Before refunds"
         lightBg="#E6F1FB"
         darkBg="#2D2D2F"
@@ -41,7 +36,7 @@ export default function KPIHealth({ kpis, customerType = 'all' }) {
       />
       <Card
         label="Refund losses"
-        value={fmtK(kpis.refunded)}
+        value={formatMoneyCompact(kpis.refunded)}
         sub={`Returned to ${getCustomerLabel(customerType, 2)}`}
         lightBg="#FCEBEB"
         darkBg="#2D2D2F"
@@ -50,7 +45,7 @@ export default function KPIHealth({ kpis, customerType = 'all' }) {
       />
       <Card
         label="Dispute losses"
-        value={fmtK(kpis.disputeLosses)}
+        value={formatMoneyCompact(kpis.disputeLosses)}
         sub="Chargebacks"
         lightBg="#FAEEDA"
         darkBg="#2D2D2F"
@@ -59,7 +54,7 @@ export default function KPIHealth({ kpis, customerType = 'all' }) {
       />
       <Card
         label="Net revenue"
-        value={fmtK(kpis.net)}
+        value={formatMoneyCompact(kpis.net)}
         sub="Gross − refunds − disputes"
         lightBg="#EAF3DE"
         darkBg="#2D2D2F"

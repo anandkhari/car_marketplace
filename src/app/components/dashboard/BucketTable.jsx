@@ -1,8 +1,7 @@
 'use client'
 
 import { getCustomerLabel } from '@/lib/customerLabel'
-
-function fmt(n) { return '$' + Math.round(n).toLocaleString() }
+import { formatMoney as fmt } from '@/lib/formatMoney'
 
 function InlineBar({ value, max }) {
   const pct = max > 0 ? (value / max) * 100 : 0

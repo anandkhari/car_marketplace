@@ -132,7 +132,11 @@ export default function AdminPage() {
     supabaseError,
     setSupabaseError,
     publishHistory,
+    deletePublishedLink,
   } = useDashboardStore()
+
+  const [deletingSlug, setDeletingSlug] = useState(null)
+  const [confirmSlug, setConfirmSlug] = useState(null)
 
   const slots = {
     canada: { payments: canada.payments, customers: canada.customers },
@@ -246,6 +250,7 @@ export default function AdminPage() {
                     <th className="text-center px-4 py-3 font-medium">US</th>
                     <th className="text-left px-4 py-3 font-medium">Link</th>
                     <th className="px-4 py-3" />
+                    <th className="px-4 py-3" />
                   </tr>
                 </thead>
                 <tbody>
@@ -267,8 +272,50 @@ export default function AdminPage() {
                           <Dot active={!!row.us_meta} />
                         </td>
                         <td className="px-4 py-3 text-gray-400 dark:text-[#6B6B70] font-mono">{displayUrl}</td>
-                        <td className="px-4 py-3 text-right">
-                          <CopyLinkButton slug={row.slug} />
+                        <td className="px-4 py-3 text-right" colSpan={2}>
+                          <div className="flex items-center justify-end gap-2">
+                            <CopyLinkButton slug={row.slug} />
+
+                            {confirmSlug === row.slug ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-red-600 dark:text-red-400">Delete?</span>
+                                <button
+                                  onClick={async () => {
+                                    setDeletingSlug(row.slug)
+                                    setConfirmSlug(null)
+                                    try {
+                                      await deletePublishedLink(row.slug)
+                                    } catch (err) {
+                                      alert('Failed to delete: ' + err.message)
+                                    } finally {
+                                      setDeletingSlug(null)
+                                    }
+                                  }}
+                                  className="text-xs px-2 py-1 rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  onClick={() => setConfirmSlug(null)}
+                                  className="text-xs px-2 py-1 rounded border border-gray-200 dark:border-[#2D2D2F] text-gray-600 dark:text-[#8E8E93] hover:bg-gray-50 dark:hover:bg-[#2D2D2F] transition-colors"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : deletingSlug === row.slug ? (
+                              <div className="flex items-center gap-1">
+                                <div className="w-3 h-3 border border-red-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-xs text-red-500">Deleting...</span>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmSlug(row.slug)}
+                                className="text-xs px-2 py-1 rounded border border-red-200 dark:border-red-900 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     )

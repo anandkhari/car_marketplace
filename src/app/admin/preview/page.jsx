@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useDashboardStore } from '@/store/dashboardStore'
 import { copyToClipboard } from '@/lib/copyToClipboard'
@@ -39,11 +40,14 @@ function Divider() {
 
 export default function AdminPreviewPage() {
   const router = useRouter()
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
   const { isPublishing, publishedSlug, publishDashboard } = useDashboardStore()
 
   const [copied, setCopied] = useState(false)
   const [showBanner, setShowBanner] = useState(false)
   const [bannerTimer, setBannerTimer] = useState(null)
+  const [dotFilter, setDotFilter] = useState('all')
 
   const {
     country, setCountry,
@@ -266,11 +270,28 @@ export default function AdminPreviewPage() {
               </div>
 
               <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium text-gray-400 dark:text-[#6B6B70] uppercase tracking-wide">
+                    Customer scatter
+                  </p>
+                  <select
+                    value={dotFilter}
+                    onChange={e => setDotFilter(e.target.value)}
+                    className="text-xs border border-gray-200 dark:border-[#2D2D2F] rounded-lg px-2 py-1.5 bg-white dark:bg-[#242426] text-gray-700 dark:text-[#F2F2F7] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="all">All customers</option>
+                    <option value="top">Top Customers (LTV over $1,000)</option>
+                    <option value="loyal">Loyal (1+ year)</option>
+                    <option value="generous">Generous (tips over $100)</option>
+                  </select>
+                </div>
                 <ScatterPlot
-                  joinedCustomers={filteredCustomers}
+                  filteredCustomers={filteredCustomers}
                   customerType={customerType}
-                  percentile={percentile}
+                  dotFilter={dotFilter}
+                  isDark={isDark}
                   rawPercentile={rawPercentile}
+                  percentile={percentile}
                 />
               </div>
 

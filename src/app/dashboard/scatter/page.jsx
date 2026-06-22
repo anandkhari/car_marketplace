@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { useDashboard } from '@/hooks/useDashboard'
 import SidePanel from '@/components/dashboard/SidePanel'
+import { formatMoney } from '@/lib/formatMoney'
 
 const Plot = dynamic(
   () => import('react-plotly.js'),
@@ -108,7 +109,6 @@ export default function ScatterPage() {
 
     const filterFn =
       dotFilter === 'top'      ? c => (c.net ?? 0) > 1000
-      : dotFilter === 'frequent' ? c => (c.bookingCount ?? 0) >= 6
       : dotFilter === 'loyal'    ? c => c.firstPayment && new Date(c.firstPayment) < oneYearAgo
       : dotFilter === 'generous' ? c => (c.tipTotal ?? 0) > 100
       : () => true
@@ -162,7 +162,7 @@ export default function ScatterPage() {
       y: subscribers.map(c => c.net ?? 0),
       text: subscribers.map(c =>
         `${c.name || 'Unidentified'}<br>` +
-        `LTV: $${(c.net ?? 0).toLocaleString()}<br>` +
+        `LTV: ${formatMoney(c.net ?? 0)}<br>` +
         `Bookings: ${c.bookingCount ?? '—'}<br>` +
         `Segment: Subscriber`
       ),
@@ -183,7 +183,7 @@ export default function ScatterPage() {
       y: nonSubscribers.map(c => c.net ?? 0),
       text: nonSubscribers.map(c =>
         `${c.name || 'Unidentified'}<br>` +
-        `LTV: $${(c.net ?? 0).toLocaleString()}<br>` +
+        `LTV: ${formatMoney(c.net ?? 0)}<br>` +
         `Bookings: ${c.bookingCount ?? '—'}<br>` +
         `Segment: Non-subscriber`
       ),
@@ -265,7 +265,7 @@ export default function ScatterPage() {
 
   function fmtMoney(val) {
     if (val == null || val === 0) return '—'
-    return '$' + Number(val).toLocaleString()
+    return formatMoney(val)
   }
 
   function fmtNum(val) {
@@ -338,7 +338,6 @@ export default function ScatterPage() {
           >
             <option value="all">All customers ({displayCustomers.length.toLocaleString()})</option>
             <option value="top">Top Customers — LTV over $1,000</option>
-            <option value="frequent">Frequent — 6+ bookings</option>
             <option value="loyal">Loyal — 1+ year on platform</option>
             <option value="generous">Generous — tips over $100</option>
           </select>

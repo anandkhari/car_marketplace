@@ -18,10 +18,10 @@ function toCustomerRow(country, customer) {
     is_subscriber: customer.isSubscriber,
     is_unidentified: customer.isUnidentified,
     booking_count: customer.bookingCount,
-    gross: Math.round(customer.gross),
-    refunded: Math.round(customer.refunded),
-    net: Math.round(customer.net),
-    dispute_losses: Math.round(customer.disputeLosses || 0),
+    gross: customer.gross,
+    refunded: customer.refunded,
+    net: customer.net,
+    dispute_losses: customer.disputeLosses || 0,
     full_profit: customer.fullProfit || 0,
     full_profit_gross: Math.round(customer.fullProfitGross || 0),
     partial_refund: customer.partialRefund || 0,
@@ -396,6 +396,29 @@ export async function loadPublishedHistory() {
   if (error) throw new Error('Failed to load history: ' + error.message)
 
   return data || []
+}
+
+// ─── DELETE PUBLISHED SNAPSHOT ───────────────────────────────────────────────
+export async function deletePublishedSnapshot(slug) {
+  const { error: customerError } = await supabase
+    .from('published_customers')
+    .delete()
+    .eq('slug', slug)
+
+  if (customerError) {
+    throw new Error('Failed to delete published customers: ' + customerError.message)
+  }
+
+  const { error: snapError } = await supabase
+    .from('published_snapshots')
+    .delete()
+    .eq('slug', slug)
+
+  if (snapError) {
+    throw new Error('Failed to delete published snapshot: ' + snapError.message)
+  }
+
+  return true
 }
 
 /*
