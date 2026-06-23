@@ -281,8 +281,8 @@ export default function AdminPreviewPage() {
                   >
                     <option value="all">All customers</option>
                     <option value="top">Top Customers (LTV over $1,000)</option>
-                    <option value="loyal">Loyal (1+ year)</option>
-                    <option value="generous">Generous (tips over $100)</option>
+                    <option value="loyal">Loyal Customers</option>
+                    <option value="generous">Generous Customers</option>
                   </select>
                 </div>
                 <ScatterPlot

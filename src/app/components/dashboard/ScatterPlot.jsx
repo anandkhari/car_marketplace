@@ -153,7 +153,7 @@ export default function ScatterPlot({
     all:      () => true,
     top:      c => (c.net ?? 0) > 1000,
     loyal:    c => c.firstPayment && new Date(c.firstPayment) < oneYearAgo,
-    generous: c => (c.tipTotal ?? 0) > 100,
+    generous: c => (c.tipTotal ?? 0) > 50,
   }
 
   const displayCustomers = useMemo(() => {

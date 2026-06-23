@@ -110,7 +110,7 @@ export default function ScatterPage() {
     const filterFn =
       dotFilter === 'top'      ? c => (c.net ?? 0) > 1000
       : dotFilter === 'loyal'    ? c => c.firstPayment && new Date(c.firstPayment) < oneYearAgo
-      : dotFilter === 'generous' ? c => (c.tipTotal ?? 0) > 100
+      : dotFilter === 'generous' ? c => (c.tipTotal ?? 0) > 50
       : () => true
 
     return filteredCustomers
@@ -338,8 +338,8 @@ export default function ScatterPage() {
           >
             <option value="all">All customers ({displayCustomers.length.toLocaleString()})</option>
             <option value="top">Top Customers — LTV over $1,000</option>
-            <option value="loyal">Loyal — 1+ year on platform</option>
-            <option value="generous">Generous — tips over $100</option>
+            <option value="loyal">Loyal Customers</option>
+            <option value="generous">Generous Customers</option>
           </select>
 
           {/* Right: view toggle */}

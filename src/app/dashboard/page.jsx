@@ -140,9 +140,12 @@ export default function DashboardPage() {
 
       <div className="flex-1 md:ml-60 overflow-y-auto">
 
-        {/* Amber banner */}
-        <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-xs text-amber-700 flex items-center justify-between">
-          <span>This is your private preview. Your team cannot see this yet.</span>
+        {/* Status banner */}
+        <div className={`border-b px-6 py-2 text-xs flex items-center justify-between ${publishedSlug ? 'bg-green-50 border-green-200 text-green-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+          {publishedSlug
+            ? <span>This dashboard is live. Your team can view it.</span>
+            : <span>This is your private preview. Your team cannot see this yet.</span>
+          }
           <div className="flex items-center gap-2">
             {isPublishing ? (
               <span className="flex items-center gap-1.5">
@@ -154,7 +157,7 @@ export default function DashboardPage() {
                 <span>✓ Published</span>
                 <button
                   onClick={handleCopy}
-                  className="px-3 py-1 rounded-md bg-amber-700 text-amber-50 hover:bg-amber-800 transition-colors"
+                  className="px-3 py-1 rounded-md bg-green-700 text-green-50 hover:bg-green-800 transition-colors"
                 >
                   {copied ? 'Copied!' : 'Copy Link'}
                 </button>
@@ -285,8 +288,8 @@ export default function DashboardPage() {
                 >
                   <option value="all">All customers</option>
                   <option value="top">Top Customers (LTV over $1,000)</option>
-                  <option value="loyal">Loyal (1+ year)</option>
-                  <option value="generous">Generous (tips over $100)</option>
+                  <option value="loyal">Loyal Customers</option>
+                  <option value="generous">Generous Customers</option>
                 </select>
               </div>
               <ScatterPlot
