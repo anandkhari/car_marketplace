@@ -72,8 +72,17 @@ export function DashboardProvider({ children }) {
   // Load existing snapshots from Supabase on mount
   useEffect(() => {
     async function load() {
+      console.log('store load function called')
       try {
         const snapshots = await loadAllSnapshots()
+
+        console.log('=== STORE DEBUG ===')
+        console.log('loadAllSnapshots result:', JSON.stringify({
+          canadaJoined: snapshots?.canada?.joined_customers?.length,
+          usJoined: snapshots?.us?.joined_customers?.length,
+          canadaReady: (snapshots?.canada?.joined_customers?.length ?? 0) > 0,
+          usReady: (snapshots?.us?.joined_customers?.length ?? 0) > 0,
+        }))
 
         if (snapshots.canada) {
           const snap = snapshots.canada
@@ -115,6 +124,11 @@ export function DashboardProvider({ children }) {
             latestPaymentDate: snap.latest_payment_date,
           }))
         }
+        console.log('store state after set:', JSON.stringify({
+          canadaJoined: snapshots?.canada?.joined_customers?.length,
+          usJoined: snapshots?.us?.joined_customers?.length,
+        }))
+
         try {
           const history = await loadPublishedHistory()
           setPublishHistory(history)
@@ -152,8 +166,7 @@ export function DashboardProvider({ children }) {
     console.log('saveSnapshot success for:', countryKey)
 
     const now = new Date().toISOString()
-    
-    // Kept synced with the database payloads (Fixes the state overwrite)
+
     setCountry(prev => ({
       ...prev,
       joined: hydrateJoined(payload.joined_customers),
@@ -269,20 +282,20 @@ export function DashboardProvider({ children }) {
         const customers = type === 'customers' ? parsed : currentCountry.customers.data
 
         if (payments.length > 0 && customers.length > 0) {
-          const joined = joinPaymentsAndCustomers(payments, customers)
-          const newSubscriberIds = joined
+          const { joinedCustomers } = joinPaymentsAndCustomers(payments, customers)
+          const newSubscriberIds = joinedCustomers
             .filter(c => c.isSubscriber)
             .map(c => c.id)
 
           set(prev => ({
             ...prev,
             [type]: updatedSlot,
-            joined,
+            joined: joinedCustomers,
             subscriberIds: newSubscriberIds,
             isReady: true,
           }))
 
-          const payload = prepareSavePayload(joined, newSubscriberIds, payments, customers)
+          const payload = prepareSavePayload(joinedCustomers, newSubscriberIds, payments, customers)
           void setCountryData(countryKey, payload)
         }
       },

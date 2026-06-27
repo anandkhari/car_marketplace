@@ -44,6 +44,7 @@ function toCustomerRow(country, customer) {
     min_gap_days:    customer.minGapDays    || 0,
     max_gap_days:    customer.maxGapDays    || 0,
     return_pattern:  customer.returnPattern || 'single',
+    booking_gaps:    customer.bookingGaps   || [],
   }
 }
 
@@ -184,6 +185,16 @@ function toJoinedCustomer(r) {
     minGapDays:    r.min_gap_days    || 0,
     maxGapDays:    r.max_gap_days    || 0,
     returnPattern: r.return_pattern  || 'single',
+    bookingGaps: (() => {
+      try {
+        const raw = r.booking_gaps
+        if (!raw) return []
+        if (Array.isArray(raw)) return raw
+        return JSON.parse(raw)
+      } catch {
+        return []
+      }
+    })(),
   }
 }
 
@@ -441,7 +452,8 @@ ALTER TABLE customer_snapshots
   ADD COLUMN IF NOT EXISTS median_gap_days integer DEFAULT 0,
   ADD COLUMN IF NOT EXISTS min_gap_days    integer DEFAULT 0,
   ADD COLUMN IF NOT EXISTS max_gap_days    integer DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS return_pattern  text    DEFAULT 'single';
+  ADD COLUMN IF NOT EXISTS return_pattern  text    DEFAULT 'single',
+  ADD COLUMN IF NOT EXISTS booking_gaps    jsonb   DEFAULT '[]'::jsonb;
 
 ALTER TABLE published_customers
   ADD COLUMN IF NOT EXISTS tip_count integer DEFAULT 0,
@@ -453,5 +465,6 @@ ALTER TABLE published_customers
   ADD COLUMN IF NOT EXISTS median_gap_days integer DEFAULT 0,
   ADD COLUMN IF NOT EXISTS min_gap_days    integer DEFAULT 0,
   ADD COLUMN IF NOT EXISTS max_gap_days    integer DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS return_pattern  text    DEFAULT 'single';
+  ADD COLUMN IF NOT EXISTS return_pattern  text    DEFAULT 'single',
+  ADD COLUMN IF NOT EXISTS booking_gaps    jsonb   DEFAULT '[]'::jsonb;
 */

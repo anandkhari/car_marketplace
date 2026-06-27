@@ -45,7 +45,6 @@ export function useDashboard() {
 
   const store = country === 'canada' ? canada : us
   const payments = store.payments.data
-
   // Date-range filtered customers (all types)
   const filteredCustomers = useMemo(() =>
     filterByDateRange(store.joined, payments, dateRange),
@@ -121,10 +120,24 @@ export function useDashboard() {
     [tipCustomers]
   )
 
-  // Return intervals — uses all-time data, not date-filtered
+  // Reconstruct allGaps from per-customer bookingGaps arrays — pure Method B.
+  // Works after both fresh upload (bookingGaps computed in join.js) and
+  // page refresh (bookingGaps loaded from Supabase booking_gaps jsonb column).
+  const allGaps = useMemo(() => {
+    const gaps = []
+    for (const c of allTimeCustomers) {
+      if (Array.isArray(c.bookingGaps) && c.bookingGaps.length > 0) {
+        gaps.push(...c.bookingGaps)
+      }
+    }
+    return gaps
+  }, [allTimeCustomers])
+
+  // Return intervals — allTimeCustomers for repeaters/distribution,
+  // allGaps (Logic B) for avg/median/fastest/slowest
   const returnIntervals = useMemo(
-    () => computeReturnIntervals(allTimeCustomers),
-    [allTimeCustomers]
+    () => computeReturnIntervals(allTimeCustomers, allGaps),
+    [allTimeCustomers, allGaps]
   )
 
   // All-three bucket stat sets for AvgPercentileChart and BucketTable tabs
@@ -142,6 +155,14 @@ export function useDashboard() {
     computeBucketStats(filteredNonSubs, percentile),
     [filteredNonSubs, percentile]
   )
+
+  console.log('=== RETURN INTERVALS DEBUG ===')
+  console.log('store.joined length:', store?.joined?.length)
+  console.log('allGaps length:', allGaps?.length)
+  console.log('allTimeCustomers length:', allTimeCustomers?.length)
+  console.log('repeaters count:', allTimeCustomers?.filter(c => (c.bookingCount ?? 0) >= 2).length)
+  console.log('customers with avgGapDays > 0:', allTimeCustomers?.filter(c => (c.avgGapDays ?? 0) > 0).length)
+  console.log('returnIntervals:', JSON.stringify(returnIntervals))
 
   return {
     // country
